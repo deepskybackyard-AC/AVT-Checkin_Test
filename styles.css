@@ -212,3 +212,19 @@ main { width: min(100%, 760px); margin: 0 auto; }
 @media (min-width: 680px) {
   .summary-grid { grid-template-columns: repeat(3, 1fr); }
 }
+
+
+/* Ergänzungen 0.1.0-test.3 */
+.icon-button.is-refreshing {
+  animation: avt-refresh-spin .55s linear infinite;
+}
+@keyframes avt-refresh-spin {
+  to { transform: rotate(360deg); }
+}
+.overview-logout {
+  margin-top: 12px;
+  margin-bottom: max(4px, env(safe-area-inset-bottom));
+}
+.family-hint {
+  margin: 10px 0 0;
+}

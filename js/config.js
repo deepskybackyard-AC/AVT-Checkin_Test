@@ -2,7 +2,7 @@
 
 window.AVT_CONFIG = Object.freeze({
   appName: "AVT Check-in Demo",
-  version: "0.1.0-test.2",
+  version: "0.1.0-test.3",
   demoPassword: "avt-demo",
   familyDefaultPersons: 3,
   maxConfirmedPersons: 65,

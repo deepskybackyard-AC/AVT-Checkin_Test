@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
-  <link rel="stylesheet" href="styles.css?v=0.1.0-test.2">
+  <link rel="stylesheet" href="styles.css?v=0.1.0-test.3">
 </head>
 <body>
   <noscript>Diese Demo benötigt JavaScript.</noscript>
@@ -26,14 +26,14 @@
           <div class="version-line" id="versionLabel"></div>
         </div>
       </div>
-      <button id="logoutButton" class="icon-button hidden" type="button" aria-label="Abmelden" title="Abmelden">↪</button>
+      <button id="refreshButton" class="icon-button hidden" type="button" aria-label="Statistik aktualisieren" title="Statistik aktualisieren">⟳</button>
     </header>
 
     <main>
       <section id="loginView" class="view narrow-view">
         <div class="card login-card">
           <h1>Gemeinsamer Check-in-Zugang</h1>
-          <p class="muted">Diese Testversion nutzt ausschließlich Demo-Daten.</p>
+          <p class="muted">Diese erste Testversion nutzt ausschließlich Demo-Daten.</p>
           <form id="loginForm">
             <label for="passwordInput">Passwort</label>
             <div class="password-row">
@@ -62,10 +62,6 @@
           <div id="eventDateTime" class="event-datetime"></div>
           <div class="capacity-line"><strong id="headerPresent">0</strong> von <strong id="headerCapacity">65</strong> Personen eingecheckt</div>
         </section>
-
-        <div class="notice demo-notice">
-          <strong>Testversion:</strong> Check-ins werden nur auf diesem Gerät gespeichert. Die gemeinsame Live-Übersicht mehrerer Handys folgt mit dem Test-Backend.
-        </div>
 
         <nav class="action-grid" aria-label="Hauptfunktionen">
           <button class="primary action-tile" data-nav="scan" type="button"><span class="tile-icon">▣</span><span>QR-Code scannen</span></button>
@@ -152,6 +148,7 @@
             <h2>Check-in-Übersicht</h2>
           </div>
           <div id="overviewContent"></div>
+          <button id="logoutButton" class="secondary full-width overview-logout" type="button">Vom Demo-Zugang abmelden</button>
         </section>
       </section>
     </main>
@@ -170,10 +167,10 @@
   </div>
 
   <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
-  <script src="js/config.js?v=0.1.0-test.2"></script>
-  <script src="js/demo-data.js?v=0.1.0-test.2"></script>
-  <script src="js/storage.js?v=0.1.0-test.2"></script>
-  <script src="js/scanner.js?v=0.1.0-test.2"></script>
-  <script src="js/app.js?v=0.1.0-test.2"></script>
+  <script src="js/config.js?v=0.1.0-test.3"></script>
+  <script src="js/demo-data.js?v=0.1.0-test.3"></script>
+  <script src="js/storage.js?v=0.1.0-test.3"></script>
+  <script src="js/scanner.js?v=0.1.0-test.3"></script>
+  <script src="js/app.js?v=0.1.0-test.3"></script>
 </body>
 </html>

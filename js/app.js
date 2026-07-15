@@ -37,6 +37,7 @@
       input.type = input.type === "password" ? "text" : "password";
       $("togglePassword").textContent = input.type === "password" ? "Anzeigen" : "Verbergen";
     });
+    $("refreshButton").addEventListener("click", refreshStatistics);
     $("logoutButton").addEventListener("click", logout);
     document.querySelectorAll("[data-nav]").forEach(button => button.addEventListener("click", () => navigate(button.dataset.nav)));
     $("startCameraButton").addEventListener("click", startCamera);
@@ -54,14 +55,14 @@
   function showLogin() {
     $("loginView").classList.remove("hidden");
     $("mainView").classList.add("hidden");
-    $("logoutButton").classList.add("hidden");
+    $("refreshButton").classList.add("hidden");
     setTimeout(() => $("passwordInput").focus(), 50);
   }
 
   function showMain() {
     $("loginView").classList.add("hidden");
     $("mainView").classList.remove("hidden");
-    $("logoutButton").classList.remove("hidden");
+    $("refreshButton").classList.remove("hidden");
     navigate("home");
   }
 
@@ -83,6 +84,50 @@
     SCANNER.stop();
     STORE.clearLogin();
     showLogin();
+  }
+
+  function refreshStatistics() {
+    const button = $("refreshButton");
+    button.disabled = true;
+    button.classList.add("is-refreshing");
+
+    // In dieser lokalen Demo werden die Daten erneut aus dem Gerätespeicher
+    // gelesen. In der Mehrgeräte-Version wird an dieser Stelle der gemeinsame
+    // Test-Server abgefragt, ohne die Anmeldung oder den aktuellen Bildschirm
+    // zu verändern.
+    checkins = STORE.getCheckins();
+    const s = stats();
+    updateVisibleStatistics(s);
+
+    if (!$("homePanel").classList.contains("hidden")) {
+      renderDashboard();
+    } else if (!$("overviewPanel").classList.contains("hidden")) {
+      renderOverview();
+    }
+
+    window.setTimeout(() => {
+      button.disabled = false;
+      button.classList.remove("is-refreshing");
+    }, 320);
+    showToast("Statistik wurde aktualisiert.");
+  }
+
+  function updateVisibleStatistics(s = stats()) {
+    $("headerPresent").textContent = s.present;
+    const values = {
+      regularCheckedPersons: s.regularCheckedPersons,
+      waitCheckedPersons: s.waitCheckedPersons,
+      exceptionCheckedPersons: s.exceptionCheckedPersons,
+      present: `${s.present} / ${DATA.activeEvent.maxPersons}`,
+      initiallyUnallocated: s.initiallyUnallocated,
+      safeFree: s.safeFree
+    };
+    document.querySelectorAll("[data-stat]").forEach(node => {
+      const key = node.dataset.stat;
+      if (Object.prototype.hasOwnProperty.call(values, key)) {
+        node.textContent = values[key];
+      }
+    });
   }
 
   function renderEvent() {
@@ -391,7 +436,10 @@
   }
 
   function counterEditor(counts) {
-    return `<div class="card"><h3>Personenzahl anpassen</h3><div class="counter-list">${Object.entries(counts).filter(([, value]) => value > 0).map(([key, value]) => `<div class="counter-row"><div class="counter-label">${U.escapeHtml(categoryMeta[key].label)}</div><button type="button" class="counter-button" data-counter="${key}" data-delta="-1" aria-label="${U.escapeHtml(categoryMeta[key].label)} verringern">−</button><div id="counter-${key}" class="counter-value">${value}</div><button type="button" class="counter-button" data-counter="${key}" data-delta="1" aria-label="${U.escapeHtml(categoryMeta[key].label)} erhöhen">+</button></div>`).join("")}</div><p class="muted small">Bei einer Familienanmeldung startet der Check-in mit dem Standardwert 3 Personen.</p></div>`;
+    const familyHint = Number(currentRegistration?.booked?.family || 0) > 0
+      ? `<p class="muted small family-hint">Bei einer Familienanmeldung startet der Check-in mit dem Standardwert 3 Personen.</p>`
+      : "";
+    return `<div class="card"><h3>Personenzahl anpassen</h3><div class="counter-list">${Object.entries(counts).filter(([, value]) => value > 0).map(([key, value]) => `<div class="counter-row"><div class="counter-label">${U.escapeHtml(categoryMeta[key].label)}</div><button type="button" class="counter-button" data-counter="${key}" data-delta="-1" aria-label="${U.escapeHtml(categoryMeta[key].label)} verringern">−</button><div id="counter-${key}" class="counter-value">${value}</div><button type="button" class="counter-button" data-counter="${key}" data-delta="1" aria-label="${U.escapeHtml(categoryMeta[key].label)} erhöhen">+</button></div>`).join("")}</div>${familyHint}</div>`;
   }
 
   function changeCounter(key, delta) {
@@ -456,7 +504,7 @@
     const heading = corrected ? "Korrektur gespeichert" : (isCancelledException ? "Ausnahme-Check-in erfolgreich" : "Check-in erfolgreich");
     let html = `<div class="alert ${isCancelledException ? "alert-warning" : "alert-success"}"><h3>${heading}</h3><p><strong>${U.escapeHtml(reg.name)}</strong> · ${U.escapeHtml(reg.number)}</p><p><strong>${total} Personen</strong> wurden übernommen.</p>${isCancelledException ? "<p>Diese Personen werden als stornierte Ausnahme gezählt.</p>" : ""}</div>`;
     html += countsReadout(actual.counts);
-    html += `<div class="card"><h3>Aktueller Gesamtstand</h3><dl class="detail-grid"><dt>Regulär eingecheckt</dt><dd>${s.regularCheckedPersons}</dd><dt>Warteliste eingecheckt</dt><dd>${s.waitCheckedPersons}</dd><dt>Stornierte Ausnahmen</dt><dd>${s.exceptionCheckedPersons}</dd><dt>Gesamt anwesend</dt><dd>${s.present} / ${DATA.activeEvent.maxPersons}</dd><dt>Von Anfang an nicht vergeben</dt><dd>${s.initiallyUnallocated}</dd><dt>Sicher freie Plätze</dt><dd>${s.safeFree}</dd></dl></div>`;
+    html += `<div class="card"><h3>Aktueller Gesamtstand</h3><dl class="detail-grid"><dt>Regulär eingecheckt</dt><dd data-stat="regularCheckedPersons">${s.regularCheckedPersons}</dd><dt>Warteliste eingecheckt</dt><dd data-stat="waitCheckedPersons">${s.waitCheckedPersons}</dd><dt>Stornierte Ausnahmen</dt><dd data-stat="exceptionCheckedPersons">${s.exceptionCheckedPersons}</dd><dt>Gesamt anwesend</dt><dd data-stat="present">${s.present} / ${DATA.activeEvent.maxPersons}</dd><dt>Von Anfang an nicht vergeben</dt><dd data-stat="initiallyUnallocated">${s.initiallyUnallocated}</dd><dt>Sicher freie Plätze</dt><dd data-stat="safeFree">${s.safeFree}</dd></dl></div>`;
     html += `<div class="checkin-actions"><button class="primary full-width" data-next-scan type="button">Nächsten QR-Code scannen</button><button class="secondary full-width" data-overview type="button">Gesamtübersicht öffnen</button></div>`;
     setResultHtml(html);
     $("resultContent").querySelector("[data-overview]").addEventListener("click", () => navigate("overview"));

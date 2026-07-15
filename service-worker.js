@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "avt-checkin-demo-0.1.0-test.2";
+const CACHE_NAME = "avt-checkin-demo-0.1.0-test.3";
 const LOCAL_ASSETS = [
   "./",
   "./index.html",
