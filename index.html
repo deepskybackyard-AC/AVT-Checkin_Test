@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#172a3a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AVT Check-in">
+  <meta name="description" content="Demo der AVT Check-in-App für Sternführungen">
+  <title>AVT Check-in Demo</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <noscript>Diese Demo benötigt JavaScript.</noscript>
+
+  <div id="app" class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <img src="icons/icon-192.png" alt="" class="brand-icon">
+        <div>
+          <div class="brand-line">AVT Check-in <span class="demo-pill">DEMO</span></div>
+          <div class="version-line" id="versionLabel"></div>
+        </div>
+      </div>
+      <button id="logoutButton" class="icon-button hidden" type="button" aria-label="Abmelden" title="Abmelden">↪</button>
+    </header>
+
+    <main>
+      <section id="loginView" class="view narrow-view">
+        <div class="card login-card">
+          <h1>Gemeinsamer Check-in-Zugang</h1>
+          <p class="muted">Diese erste Testversion nutzt ausschließlich Demo-Daten.</p>
+          <form id="loginForm">
+            <label for="passwordInput">Passwort</label>
+            <div class="password-row">
+              <input id="passwordInput" name="password" type="password" autocomplete="current-password" enterkeyhint="go" required>
+              <button id="togglePassword" type="button" class="secondary compact">Anzeigen</button>
+            </div>
+
+            <fieldset>
+              <legend>Anmeldung speichern</legend>
+              <label class="radio-row"><input type="radio" name="loginStorage" value="session"> Nur bis zum Schließen</label>
+              <label class="radio-row"><input type="radio" name="loginStorage" value="day" checked> Für den Veranstaltungstag</label>
+              <label class="radio-row"><input type="radio" name="loginStorage" value="permanent"> Dauerhaft auf diesem Gerät</label>
+            </fieldset>
+
+            <button type="submit" class="primary full-width">Anmelden</button>
+            <p id="loginError" class="form-error" role="alert"></p>
+          </form>
+          <div class="demo-hint"><strong>Demo-Passwort:</strong> <code>avt-demo</code></div>
+        </div>
+      </section>
+
+      <section id="mainView" class="view hidden">
+        <section class="event-card" aria-labelledby="eventTitle">
+          <div class="event-source">Von der Homepage übernommen · Demo</div>
+          <h1 id="eventTitle"></h1>
+          <div id="eventDateTime" class="event-datetime"></div>
+          <div class="capacity-line"><strong id="headerPresent">0</strong> von <strong id="headerCapacity">65</strong> Personen eingecheckt</div>
+        </section>
+
+        <div class="notice demo-notice">
+          <strong>Testversion:</strong> Check-ins werden nur auf diesem Gerät gespeichert. Die gemeinsame Live-Übersicht mehrerer Handys folgt mit dem Test-Backend.
+        </div>
+
+        <nav class="action-grid" aria-label="Hauptfunktionen">
+          <button class="primary action-tile" data-nav="scan" type="button"><span class="tile-icon">▣</span><span>QR-Code scannen</span></button>
+          <button class="secondary action-tile" data-nav="search" type="button"><span class="tile-icon">⌕</span><span>Manuell suchen</span></button>
+          <button class="secondary action-tile" data-nav="overview" type="button"><span class="tile-icon">Σ</span><span>Übersicht</span></button>
+        </nav>
+
+        <section id="homePanel" class="panel">
+          <div id="summaryCards" class="summary-grid"></div>
+
+          <details class="card scenario-card">
+            <summary>Demoszenarien ohne QR-Code testen</summary>
+            <p class="muted small">Damit lässt sich der Ablauf auch auf nur einem Handy prüfen.</p>
+            <div id="scenarioButtons" class="scenario-list"></div>
+          </details>
+
+          <div class="card quick-info">
+            <h2>In dieser Version testbar</h2>
+            <ul>
+              <li>regulärer Check-in mit veränderbaren Personenzahlen</li>
+              <li>Familienanmeldung mit Standardwert 3</li>
+              <li>bereits eingecheckt, storniert und falsche Veranstaltung</li>
+              <li>Wartelistenreihenfolge und bewusste Ausnahme</li>
+              <li>Übersicht regulär / Warteliste / Minderteilnahme</li>
+            </ul>
+          </div>
+        </section>
+
+        <section id="scanPanel" class="panel hidden">
+          <div class="panel-heading">
+            <button class="back-button" data-nav="home" type="button">‹ Zurück</button>
+            <h2>QR-Code scannen</h2>
+          </div>
+          <div class="card scanner-card">
+            <div id="cameraPlaceholder" class="camera-placeholder">
+              <div class="camera-symbol">▣</div>
+              <p>Kamera erst nach Antippen starten.</p>
+            </div>
+            <video id="cameraVideo" class="camera-video hidden" playsinline muted></video>
+            <canvas id="cameraCanvas" class="hidden"></canvas>
+            <div id="scanLine" class="scan-line hidden" aria-hidden="true"></div>
+            <p id="cameraStatus" class="camera-status" role="status"></p>
+            <button id="startCameraButton" class="primary full-width" type="button">Kamera starten</button>
+            <button id="stopCameraButton" class="secondary full-width hidden" type="button">Kamera stoppen</button>
+            <label class="secondary full-width file-button">
+              QR-Code aus Bild auswählen
+              <input id="imageInput" type="file" accept="image/*" hidden>
+            </label>
+          </div>
+          <div class="card small">
+            <strong>Hinweis für iPhone:</strong> Den Kamerazugriff beim ersten Start erlauben. Die App muss über HTTPS geöffnet werden.
+          </div>
+        </section>
+
+        <section id="searchPanel" class="panel hidden">
+          <div class="panel-heading">
+            <button class="back-button" data-nav="home" type="button">‹ Zurück</button>
+            <h2>Manuell suchen</h2>
+          </div>
+          <div class="card">
+            <label for="searchInput">Anmeldenummer oder Name</label>
+            <input id="searchInput" type="search" placeholder="z. B. A-02 oder Familie" autocomplete="off" enterkeyhint="search">
+            <div id="searchResults" class="search-results" aria-live="polite"></div>
+          </div>
+        </section>
+
+        <section id="resultPanel" class="panel hidden">
+          <div class="panel-heading">
+            <button class="back-button" data-nav="home" type="button">‹ Abbrechen</button>
+            <h2>Prüfung</h2>
+          </div>
+          <div id="resultContent"></div>
+        </section>
+
+        <section id="overviewPanel" class="panel hidden">
+          <div class="panel-heading">
+            <button class="back-button" data-nav="home" type="button">‹ Zurück</button>
+            <h2>Check-in-Übersicht</h2>
+          </div>
+          <div id="overviewContent"></div>
+        </section>
+      </section>
+    </main>
+
+    <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+    <div id="modalBackdrop" class="modal-backdrop hidden" role="presentation">
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <h2 id="modalTitle"></h2>
+        <div id="modalBody"></div>
+        <div class="modal-actions">
+          <button id="modalCancel" class="secondary" type="button">Abbrechen</button>
+          <button id="modalConfirm" class="danger" type="button">Trotzdem fortfahren</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/demo-data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/scanner.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

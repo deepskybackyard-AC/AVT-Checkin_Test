@@ -1,0 +1,9 @@
+AVT Check-in Demo
+
+Die projektspezifischen Dateien dieser Demo wurden für die Astronomische Vereinigung Tübingen e. V. erstellt.
+
+Drittanbieter:
+- jsQR, Copyright (c) cozmo, Apache License 2.0
+  https://github.com/cozmo/jsQR
+
+Die Demo lädt jsQR 1.4.0 zur Laufzeit über unpkg.com.

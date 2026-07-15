@@ -1,0 +1,46 @@
+# Projektstatus AVT Check-in
+
+Stand: 15.07.2026  
+Aktuelle Testversion: `0.1.0-test.1`
+
+## Festgelegte Anforderungen
+
+- Entwicklung wie beim Astro Night Planner: vollständige versionierte Projektpakete, kein Austausch einzelner Codeschnipsel.
+- Die Scanner-Oberfläche wird als eigenständige HTTPS-Web-App entwickelt.
+- Produktive Daten und Google Apps Script bleiben während der ersten Demo-Phase unverändert.
+- Maximale reguläre Personenzahl wird später aus `MAX_CONFIRMED_PERSONS` im Tabellenblatt `Konfiguration` gelesen; derzeit 65.
+- Familienanmeldung zählt standardmäßig als 3 Personen.
+- Gemeinsamer Standardlogin; keine namentliche Benutzerverwaltung erforderlich.
+- Login wahlweise nur für die Sitzung, für den Veranstaltungstag oder dauerhaft auf dem Gerät speichern.
+- Initial aktive Veranstaltung wird später aus derselben Quelle übernommen, die die Homepage verwendet.
+- QR-Code muss Veranstaltung und Tag eindeutig zuordnen.
+- Bereits eingecheckte und stornierte Anmeldungen müssen erkannt werden.
+- Warteliste muss aufsteigend bearbeitet werden; bei W-06 werden offene kleinere W-Nummern angezeigt.
+- Ein Check-in trotz Wartelistenreihenfolge bleibt nach bewusster Bestätigung möglich.
+- Tatsächliche Personenzahlen je Kategorie können mit Plus/Minus verändert werden.
+- Übersicht trennt reguläre und Wartelisten-Check-ins und zeigt Minderteilnahme sowie sicher freie Plätze.
+- Später zusätzliche sichtbare Spalte `Eingecheckte Personen` in `Aktuelle_Anmeldungen`.
+- Mehrere Handys müssen später eine gemeinsame serverseitige Live-Übersicht verwenden.
+
+## Inhalt von 0.1.0-test.1
+
+- vollständiger mobiler Demo-Ablauf mit künstlichen Daten
+- echter QR-Scan über Smartphonekamera vorgesehen
+- Bildimport und manuelle Suche als Alternativen
+- lokale Speicherung nur auf dem jeweiligen Testgerät
+- acht Test-QR-Codes
+- GitHub-Pages-fähiges Projektpaket
+
+## Noch nicht umgesetzt
+
+- Verbindung zum bestehenden Projekt `Server Status Sternführung`
+- Test- oder Produktivzugriff auf Google Sheets
+- Mehrgeräte-Synchronisierung
+- serverseitige Passwortprüfung
+- automatische Übernahme der realen Homepage-Veranstaltung
+- QR-Code-Erzeugung in den realen Bestätigungsmails
+- produktive Spalte `Eingecheckte Personen`
+
+## Nächster Schritt nach dem Bedienungstest
+
+Rückmeldungen zu Layout, Texten und Ablauf in `0.1.0-test.2` umsetzen. Danach separate Testtabelle und Apps-Script-Test-Backend für den Mehrgerätebetrieb entwickeln.
