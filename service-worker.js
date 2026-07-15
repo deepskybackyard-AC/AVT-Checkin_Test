@@ -1,14 +1,14 @@
 "use strict";
 
-const CACHE_NAME = "avt-checkin-demo-0.1.0-test.3";
+const CACHE_NAME = "avt-checkin-demo-0.2.0-test.1";
 const LOCAL_ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./manifest.webmanifest",
   "./js/config.js",
-  "./js/demo-data.js",
   "./js/storage.js",
+  "./js/backend-client.js",
   "./js/scanner.js",
   "./js/app.js",
   "./icons/icon-192.png",

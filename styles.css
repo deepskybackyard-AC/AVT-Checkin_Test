@@ -228,3 +228,44 @@ main { width: min(100%, 760px); margin: 0 auto; }
 .family-hint {
   margin: 10px 0 0;
 }
+
+/* Mehrgeräte-Test 0.2.0-test.1 */
+.backend-setup {
+  margin: 0 0 18px;
+  padding: 12px;
+  border: 1px solid var(--border, #c9d2db);
+  border-radius: 12px;
+  background: #f5f8fa;
+}
+.backend-setup summary {
+  cursor: pointer;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+.backend-setup[open] summary {
+  margin-bottom: 12px;
+}
+.backend-status,
+.sync-status {
+  margin: 8px 0 0;
+  font-size: .84rem;
+  line-height: 1.35;
+}
+.backend-status[data-tone="success"],
+.sync-status[data-tone="success"] { color: #24633f; }
+.backend-status[data-tone="error"],
+.sync-status[data-tone="error"] { color: #a12626; }
+.backend-status[data-tone="pending"],
+.sync-status[data-tone="pending"] { color: #765500; }
+.backend-status[data-tone="idle"],
+.sync-status[data-tone="idle"] { color: #5f6c78; }
+.sync-status {
+  padding-top: 7px;
+  border-top: 1px solid rgba(255,255,255,.18);
+}
+.event-card .sync-status[data-tone="success"] { color: #d7f4e4; }
+.event-card .sync-status[data-tone="pending"] { color: #ffe3a1; }
+.event-card .sync-status[data-tone="error"] { color: #ffc3c3; }
+#backendUrlInput {
+  font-size: .88rem;
+}

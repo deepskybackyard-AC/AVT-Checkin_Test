@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="AVT Check-in">
-  <meta name="description" content="Demo der AVT Check-in-App für Sternführungen">
-  <title>AVT Check-in Demo</title>
+  <meta name="description" content="Mehrgeräte-Test der AVT Check-in-App für Sternführungen">
+  <title>AVT Check-in Mehrgeräte-Test</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
-  <link rel="stylesheet" href="styles.css?v=0.1.0-test.3">
+  <link rel="stylesheet" href="styles.css?v=0.2.0-test.1">
 </head>
 <body>
   <noscript>Diese Demo benötigt JavaScript.</noscript>
@@ -22,20 +22,28 @@
       <div class="brand">
         <img src="icons/icon-192.png" alt="" class="brand-icon">
         <div>
-          <div class="brand-line">AVT Check-in <span class="demo-pill">DEMO</span></div>
+          <div class="brand-line">AVT Check-in <span class="demo-pill">TEST</span></div>
           <div class="version-line" id="versionLabel"></div>
         </div>
       </div>
-      <button id="refreshButton" class="icon-button hidden" type="button" aria-label="Statistik aktualisieren" title="Statistik aktualisieren">⟳</button>
+      <button id="refreshButton" class="icon-button hidden" type="button" aria-label="Gemeinsame Statistik aktualisieren" title="Gemeinsame Statistik aktualisieren">⟳</button>
     </header>
 
     <main>
       <section id="loginView" class="view narrow-view">
         <div class="card login-card">
           <h1>Gemeinsamer Check-in-Zugang</h1>
-          <p class="muted">Diese erste Testversion nutzt ausschließlich Demo-Daten.</p>
+          <p class="muted">Diese Testversion verbindet mehrere Handys mit demselben Apps-Script-Test-Backend.</p>
           <form id="loginForm">
-            <label for="passwordInput">Passwort</label>
+            <details class="backend-setup" open>
+              <summary>Test-Backend verbinden</summary>
+              <label for="backendUrlInput">Web-App-URL des Test-Backends</label>
+              <input id="backendUrlInput" type="url" inputmode="url" autocomplete="url" placeholder="https://script.google.com/macros/s/.../exec" required>
+              <button id="testBackendButton" type="button" class="secondary full-width">Verbindung testen</button>
+              <p id="backendStatus" class="backend-status" data-tone="idle" role="status"></p>
+            </details>
+
+            <label for="passwordInput">Gemeinsames Passwort</label>
             <div class="password-row">
               <input id="passwordInput" name="password" type="password" autocomplete="current-password" enterkeyhint="go" required>
               <button id="togglePassword" type="button" class="secondary compact">Anzeigen</button>
@@ -48,19 +56,20 @@
               <label class="radio-row"><input type="radio" name="loginStorage" value="permanent"> Dauerhaft auf diesem Gerät</label>
             </fieldset>
 
-            <button type="submit" class="primary full-width">Anmelden</button>
+            <button id="loginSubmitButton" type="submit" class="primary full-width">Anmelden</button>
             <p id="loginError" class="form-error" role="alert"></p>
           </form>
-          <div class="demo-hint"><strong>Demo-Passwort:</strong> <code>avt-demo</code></div>
+          <div class="demo-hint"><strong>Test-Passwort:</strong> <code>avt-demo</code></div>
         </div>
       </section>
 
       <section id="mainView" class="view hidden">
         <section class="event-card" aria-labelledby="eventTitle">
-          <div class="event-source">Von der Homepage übernommen · Demo</div>
+          <div class="event-source">Gemeinsamer Mehrgeräte-Testserver</div>
           <h1 id="eventTitle"></h1>
           <div id="eventDateTime" class="event-datetime"></div>
           <div class="capacity-line"><strong id="headerPresent">0</strong> von <strong id="headerCapacity">65</strong> Personen eingecheckt</div>
+          <div id="syncStatus" class="sync-status" data-tone="idle" role="status"></div>
         </section>
 
         <nav class="action-grid" aria-label="Hauptfunktionen">
@@ -73,25 +82,25 @@
           <div id="summaryCards" class="summary-grid"></div>
 
           <div class="card test-code-card">
-            <h2>Neue Test-QR-Codes</h2>
-            <p class="muted small">Die Codes dieser Version öffnen sich in einem neuen Tab und können von einem zweiten Bildschirm gescannt werden.</p>
+            <h2>Test-QR-Codes für 0.2.0-test.1</h2>
+            <p class="muted small">Die Codes können auf einem zweiten Bildschirm geöffnet oder als Bild gespeichert werden.</p>
             <a class="secondary full-width link-button" href="test-qr-codes/" target="_blank" rel="noopener">Test-QR-Codes öffnen</a>
           </div>
 
           <details class="card scenario-card">
-            <summary>Demoszenarien ohne QR-Code testen</summary>
-            <p class="muted small">Damit lässt sich der Ablauf auch auf nur einem Handy prüfen.</p>
+            <summary>Testszenarien ohne QR-Code</summary>
+            <p class="muted small">Die Aktionen schreiben ebenfalls in den gemeinsamen Testserver und sind auf allen Handys sichtbar.</p>
             <div id="scenarioButtons" class="scenario-list"></div>
           </details>
 
           <div class="card quick-info">
-            <h2>In dieser Version testbar</h2>
+            <h2>Mehrgeräte-Test</h2>
             <ul>
-              <li>regulärer Check-in mit veränderbaren Personenzahlen</li>
-              <li>Familienanmeldung mit Standardwert 3</li>
-              <li>bereits eingecheckt, stornierte Ausnahme und falsche Veranstaltung</li>
-              <li>Wartelistenreihenfolge und bewusste Ausnahme</li>
-              <li>von Anfang an freie Plätze, Minderteilnahme und Gesamtbelegung</li>
+              <li>gemeinsamer Stand auf mehreren Handys</li>
+              <li>serverseitiger Schutz vor Doppel-Check-ins</li>
+              <li>automatische Aktualisierung etwa alle 12 Sekunden</li>
+              <li>manuelle Aktualisierung über ⟳ ohne Abmeldung</li>
+              <li>gemeinsames Zurücksetzen der Testdaten</li>
             </ul>
           </div>
         </section>
@@ -118,7 +127,7 @@
             </label>
           </div>
           <div class="card small">
-            <strong>Hinweis für iPhone:</strong> Den Kamerazugriff beim ersten Start erlauben. Die App muss über HTTPS geöffnet werden.
+            <strong>Hinweis:</strong> Vor jeder Prüfung wird der aktuelle gemeinsame Serverstand geladen. Ohne Verbindung wird kein Check-in gespeichert.
           </div>
         </section>
 
@@ -148,7 +157,7 @@
             <h2>Check-in-Übersicht</h2>
           </div>
           <div id="overviewContent"></div>
-          <button id="logoutButton" class="secondary full-width overview-logout" type="button">Vom Demo-Zugang abmelden</button>
+          <button id="logoutButton" class="secondary full-width overview-logout" type="button">Vom gemeinsamen Testzugang abmelden</button>
         </section>
       </section>
     </main>
@@ -167,10 +176,10 @@
   </div>
 
   <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
-  <script src="js/config.js?v=0.1.0-test.3"></script>
-  <script src="js/demo-data.js?v=0.1.0-test.3"></script>
-  <script src="js/storage.js?v=0.1.0-test.3"></script>
-  <script src="js/scanner.js?v=0.1.0-test.3"></script>
-  <script src="js/app.js?v=0.1.0-test.3"></script>
+  <script src="js/config.js?v=0.2.0-test.1"></script>
+  <script src="js/storage.js?v=0.2.0-test.1"></script>
+  <script src="js/backend-client.js?v=0.2.0-test.1"></script>
+  <script src="js/scanner.js?v=0.2.0-test.1"></script>
+  <script src="js/app.js?v=0.2.0-test.1"></script>
 </body>
 </html>

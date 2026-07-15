@@ -1,7 +1,7 @@
 {
-  "name": "AVT Check-in Demo",
+  "name": "AVT Check-in Mehrgeräte-Test",
   "short_name": "AVT Check-in",
-  "description": "Testversion der mobilen Check-in-App für Sternführungen",
+  "description": "Mehrgeräte-Test der mobilen Check-in-App für Sternführungen",
   "lang": "de",
   "start_url": "./",
   "scope": "./",

@@ -2,29 +2,21 @@
 
 window.AVT_CONFIG = Object.freeze({
   appName: "AVT Check-in Demo",
-  version: "0.1.0-test.3",
-  demoPassword: "avt-demo",
-  familyDefaultPersons: 3,
-  maxConfirmedPersons: 65,
-  eventTime: "21:30",
-  eventTitle: "Öffentliche Sternführung",
-  eventId: "AVT-DEMO-CURRENT",
-  qrPrefix: "AVT-CHECKIN-DEMO-V2:",
+  version: "0.2.0-test.1",
+  qrPrefix: "AVT-CHECKIN-DEMO-V3:",
+  requestTimeoutMs: 30000,
+  autoRefreshMs: 12000,
   storageKeys: {
-    login: "avt-checkin-demo-login-v2",
-    checkins: "avt-checkin-demo-checkins-v2"
+    login: "avt-checkin-multidevice-login-v1",
+    backendUrl: "avt-checkin-multidevice-backend-v1",
+    deviceId: "avt-checkin-multidevice-device-v1"
   }
 });
 
 window.AVT_UTIL = Object.freeze({
-  localIsoDate(date = new Date()) {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, "0");
-    const d = String(date.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
-  },
   displayDate(isoDate) {
-    const [y, m, d] = isoDate.split("-");
+    if (!isoDate) return "–";
+    const [y, m, d] = String(isoDate).split("-");
     return `${d}.${m}.${y}`;
   },
   displayTime(isoString) {
