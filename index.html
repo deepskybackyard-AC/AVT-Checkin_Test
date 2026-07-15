@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=0.1.0-test.2">
 </head>
 <body>
   <noscript>Diese Demo benötigt JavaScript.</noscript>
@@ -33,7 +33,7 @@
       <section id="loginView" class="view narrow-view">
         <div class="card login-card">
           <h1>Gemeinsamer Check-in-Zugang</h1>
-          <p class="muted">Diese erste Testversion nutzt ausschließlich Demo-Daten.</p>
+          <p class="muted">Diese Testversion nutzt ausschließlich Demo-Daten.</p>
           <form id="loginForm">
             <label for="passwordInput">Passwort</label>
             <div class="password-row">
@@ -76,6 +76,12 @@
         <section id="homePanel" class="panel">
           <div id="summaryCards" class="summary-grid"></div>
 
+          <div class="card test-code-card">
+            <h2>Neue Test-QR-Codes</h2>
+            <p class="muted small">Die Codes dieser Version öffnen sich in einem neuen Tab und können von einem zweiten Bildschirm gescannt werden.</p>
+            <a class="secondary full-width link-button" href="test-qr-codes/" target="_blank" rel="noopener">Test-QR-Codes öffnen</a>
+          </div>
+
           <details class="card scenario-card">
             <summary>Demoszenarien ohne QR-Code testen</summary>
             <p class="muted small">Damit lässt sich der Ablauf auch auf nur einem Handy prüfen.</p>
@@ -87,9 +93,9 @@
             <ul>
               <li>regulärer Check-in mit veränderbaren Personenzahlen</li>
               <li>Familienanmeldung mit Standardwert 3</li>
-              <li>bereits eingecheckt, storniert und falsche Veranstaltung</li>
+              <li>bereits eingecheckt, stornierte Ausnahme und falsche Veranstaltung</li>
               <li>Wartelistenreihenfolge und bewusste Ausnahme</li>
-              <li>Übersicht regulär / Warteliste / Minderteilnahme</li>
+              <li>von Anfang an freie Plätze, Minderteilnahme und Gesamtbelegung</li>
             </ul>
           </div>
         </section>
@@ -100,10 +106,10 @@
             <h2>QR-Code scannen</h2>
           </div>
           <div class="card scanner-card">
-            <div id="cameraPlaceholder" class="camera-placeholder">
-              <div class="camera-symbol">▣</div>
-              <p>Kamera erst nach Antippen starten.</p>
-            </div>
+            <button id="cameraPlaceholder" class="camera-placeholder" type="button" aria-label="Kamera starten">
+              <span class="camera-symbol" aria-hidden="true">▣</span>
+              <span><strong>Kamera starten</strong><br>Hier antippen, falls sie nicht automatisch startet.</span>
+            </button>
             <video id="cameraVideo" class="camera-video hidden" playsinline muted></video>
             <canvas id="cameraCanvas" class="hidden"></canvas>
             <div id="scanLine" class="scan-line hidden" aria-hidden="true"></div>
@@ -164,10 +170,10 @@
   </div>
 
   <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
-  <script src="js/config.js"></script>
-  <script src="js/demo-data.js"></script>
-  <script src="js/storage.js"></script>
-  <script src="js/scanner.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/config.js?v=0.1.0-test.2"></script>
+  <script src="js/demo-data.js?v=0.1.0-test.2"></script>
+  <script src="js/storage.js?v=0.1.0-test.2"></script>
+  <script src="js/scanner.js?v=0.1.0-test.2"></script>
+  <script src="js/app.js?v=0.1.0-test.2"></script>
 </body>
 </html>

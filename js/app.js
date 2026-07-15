@@ -18,6 +18,7 @@
   let currentRegistration = null;
   let currentCounts = null;
   let modalResolver = null;
+  let cameraStarting = false;
 
   const $ = id => document.getElementById(id);
   const panels = ["homePanel", "scanPanel", "searchPanel", "resultPanel", "overviewPanel"];
@@ -39,6 +40,7 @@
     $("logoutButton").addEventListener("click", logout);
     document.querySelectorAll("[data-nav]").forEach(button => button.addEventListener("click", () => navigate(button.dataset.nav)));
     $("startCameraButton").addEventListener("click", startCamera);
+    $("cameraPlaceholder").addEventListener("click", startCamera);
     $("stopCameraButton").addEventListener("click", stopCameraUi);
     $("imageInput").addEventListener("change", handleImageFile);
     $("searchInput").addEventListener("input", renderSearchResults);
@@ -91,6 +93,7 @@
 
   function navigate(target) {
     SCANNER.stop();
+    cameraStarting = false;
     panels.forEach(id => $(id).classList.add("hidden"));
     const id = `${target}Panel`;
     if ($(id)) $(id).classList.remove("hidden"); else $("homePanel").classList.remove("hidden");
@@ -104,6 +107,7 @@
       setTimeout(() => $("searchInput").focus(), 50);
     } else if (target === "scan") {
       resetScannerUi();
+      void startCamera();
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -111,11 +115,20 @@
   function stats() {
     const activeRegular = DATA.registrations.filter(r => r.kind === "regular" && r.status === "active" && isCurrentEvent(r));
     const activeWait = DATA.registrations.filter(r => r.kind === "waitlist" && r.status === "active" && isCurrentEvent(r));
+    const cancelled = DATA.registrations.filter(r => r.status === "cancelled" && isCurrentEvent(r));
+
+    const confirmedBookedPersons = activeRegular.reduce((sum, reg) => sum + U.sumCounts(reg.booked), 0);
+    const initiallyUnallocated = Math.max(0, DATA.activeEvent.maxPersons - confirmedBookedPersons);
+    const confirmedOverCapacity = Math.max(0, confirmedBookedPersons - DATA.activeEvent.maxPersons);
+
     let regularCheckedPersons = 0;
     let waitCheckedPersons = 0;
+    let exceptionCheckedPersons = 0;
     let regularCheckedBookings = 0;
     let waitCheckedBookings = 0;
+    let exceptionCheckedBookings = 0;
     let missingVsBooked = 0;
+    let extraVsBooked = 0;
     let regularNotCheckedPersons = 0;
     let regularNotCheckedBookings = 0;
 
@@ -127,6 +140,7 @@
         regularCheckedPersons += actual;
         regularCheckedBookings += 1;
         missingVsBooked += Math.max(0, booked - actual);
+        extraVsBooked += Math.max(0, actual - booked);
       } else {
         regularNotCheckedPersons += booked;
         regularNotCheckedBookings += 1;
@@ -141,16 +155,25 @@
       }
     });
 
-    const present = regularCheckedPersons + waitCheckedPersons;
-    const worstCaseOccupancy = regularCheckedPersons + regularNotCheckedPersons + waitCheckedPersons;
+    cancelled.forEach(reg => {
+      const record = checkins[reg.token];
+      if (record) {
+        exceptionCheckedPersons += U.sumCounts(record.counts);
+        exceptionCheckedBookings += 1;
+      }
+    });
+
+    const present = regularCheckedPersons + waitCheckedPersons + exceptionCheckedPersons;
+    const worstCaseOccupancy = regularCheckedPersons + regularNotCheckedPersons + waitCheckedPersons + exceptionCheckedPersons;
     const safeFree = Math.max(0, DATA.activeEvent.maxPersons - worstCaseOccupancy);
     const overCapacityRisk = Math.max(0, worstCaseOccupancy - DATA.activeEvent.maxPersons);
     const openWait = activeWait.filter(reg => !checkins[reg.token]).sort(waitSort);
 
     return {
-      regularCheckedPersons, waitCheckedPersons, present,
-      regularCheckedBookings, waitCheckedBookings,
-      missingVsBooked, regularNotCheckedPersons, regularNotCheckedBookings,
+      confirmedBookedPersons, initiallyUnallocated, confirmedOverCapacity,
+      regularCheckedPersons, waitCheckedPersons, exceptionCheckedPersons, present,
+      regularCheckedBookings, waitCheckedBookings, exceptionCheckedBookings,
+      missingVsBooked, extraVsBooked, regularNotCheckedPersons, regularNotCheckedBookings,
       safeFree, overCapacityRisk, openWait
     };
   }
@@ -162,10 +185,15 @@
       summaryCard("Aktuell anwesend", `${s.present}`, "success", `von ${DATA.activeEvent.maxPersons}`),
       summaryCard("Regulär eingecheckt", `${s.regularCheckedPersons}`, "info", `${s.regularCheckedBookings} Buchungen`),
       summaryCard("Warteliste eingecheckt", `${s.waitCheckedPersons}`, "warning", `${s.waitCheckedBookings} Buchungen`),
+      summaryCard("Stornierte Ausnahmen", `${s.exceptionCheckedPersons}`, s.exceptionCheckedPersons ? "warning" : "info", `${s.exceptionCheckedBookings} Buchungen`),
+      summaryCard("Von Anfang an frei", `${s.initiallyUnallocated}`, "info", `${s.confirmedBookedPersons} regulär angemeldet`),
       summaryCard("Sicher freie Plätze", `${s.safeFree}`, s.safeFree ? "success" : "warning", `noch ${s.regularNotCheckedPersons} regulär erwartet`)
     ].join("");
 
-    const scenarioTokens = ["A01-VALID", "A02-FAMILY", "A04-ALREADY", "A05-CANCELLED", "W01-FIRST", "W06-BLOCKED", "X-WRONG-EVENT"];
+    const scenarioTokens = [
+      "T2-A01-VALID", "T2-A02-FAMILY", "T2-A04-ALREADY", "T2-A05-CANCELLED",
+      "T2-A06-GROUP", "T2-W01-FIRST", "T2-W06-BLOCKED", "T2-X-WRONG-EVENT"
+    ];
     $("scenarioButtons").innerHTML = scenarioTokens.map(token => {
       const reg = registrationByToken(token);
       return `<button type="button" class="scenario-button" data-token="${U.escapeHtml(token)}"><strong>${U.escapeHtml(reg.number)}</strong> · ${U.escapeHtml(reg.scenario)}</button>`;
@@ -186,19 +214,23 @@
   }
 
   function resetScannerUi() {
+    cameraStarting = false;
     $("startCameraButton").disabled = false;
     $("cameraVideo").classList.add("hidden");
     $("cameraPlaceholder").classList.remove("hidden");
     $("scanLine").classList.add("hidden");
     $("startCameraButton").classList.remove("hidden");
     $("stopCameraButton").classList.add("hidden");
-    $("cameraStatus").textContent = "";
+    $("cameraStatus").textContent = "Kamera wird automatisch gestartet …";
     $("imageInput").value = "";
   }
 
   async function startCamera() {
+    if (cameraStarting) return;
+    cameraStarting = true;
     try {
       $("startCameraButton").disabled = true;
+      SCANNER.setStatus("Kamera wird geöffnet …");
       await SCANNER.start(handleQrPayload);
       $("cameraPlaceholder").classList.add("hidden");
       $("cameraVideo").classList.remove("hidden");
@@ -207,7 +239,11 @@
       $("stopCameraButton").classList.remove("hidden");
     } catch (error) {
       SCANNER.setStatus(cameraErrorText(error));
+      $("cameraPlaceholder").classList.remove("hidden");
+      $("startCameraButton").classList.remove("hidden");
       $("startCameraButton").disabled = false;
+    } finally {
+      cameraStarting = false;
     }
   }
 
@@ -283,17 +319,10 @@
       return;
     }
 
-    if (reg.status === "cancelled") {
-      html += `<div class="alert alert-danger"><h3>Anmeldung storniert</h3><p>${U.escapeHtml(reg.number)} darf nicht regulär eingecheckt werden.</p></div>`;
-      html += registrationIdentity(reg);
-      html += `<button class="primary full-width" data-next-scan type="button">Nächsten QR-Code scannen</button>`;
-      setResultHtml(html);
-      return;
-    }
-
     if (existing && !editMode) {
       const actual = U.sumCounts(existing.counts);
-      html += `<div class="alert alert-success"><h3>Bereits eingecheckt</h3><p>${U.escapeHtml(reg.number)} wurde um <strong>${U.escapeHtml(U.displayTime(existing.checkedAt))} Uhr</strong> mit <strong>${actual} Personen</strong> eingecheckt.</p></div>`;
+      const isCancelledException = reg.status === "cancelled";
+      html += `<div class="alert ${isCancelledException ? "alert-warning" : "alert-success"}"><h3>${isCancelledException ? "Bereits als Ausnahme eingecheckt" : "Bereits eingecheckt"}</h3><p>${U.escapeHtml(reg.number)} wurde um <strong>${U.escapeHtml(U.displayTime(existing.checkedAt))} Uhr</strong> mit <strong>${actual} Personen</strong> eingecheckt.</p></div>`;
       html += registrationIdentity(reg);
       html += countsReadout(existing.counts);
       html += `<div class="checkin-actions"><button class="secondary full-width" data-edit type="button">Check-in korrigieren</button><button class="primary full-width" data-next-scan type="button">Nächsten QR-Code scannen</button></div>`;
@@ -305,7 +334,11 @@
       return;
     }
 
-    if (reg.kind === "waitlist") {
+    if (reg.status === "cancelled") {
+      html += `<div class="alert alert-danger"><h3>Anmeldung storniert</h3><p>${U.escapeHtml(reg.number)} besitzt keinen regulär reservierten Platz. Ein Check-in ist nur als bewusste Ausnahme nach zusätzlicher Bestätigung möglich.</p></div>`;
+    }
+
+    if (reg.kind === "waitlist" && reg.status === "active") {
       if (lowerWait.length) {
         const people = lowerWait.reduce((sum, item) => sum + U.sumCounts(item.booked), 0);
         html += `<div class="alert alert-warning"><h3>${U.escapeHtml(reg.number)} ist noch nicht an der Reihe</h3><p>Vorher sind noch <strong>${lowerWait.length} Wartelistenbuchungen mit ${people} Personen</strong> offen:</p><div class="waiting-order">${lowerWait.map(item => `<span class="wait-chip">${U.escapeHtml(item.number)}</span>`).join("")}</div></div>`;
@@ -318,8 +351,19 @@
     html += counterEditor(currentCounts);
     html += `<div class="total-box"><span>Tatsächlich einzuchecken</span><strong id="totalPersons">${U.sumCounts(currentCounts)}</strong></div>`;
 
-    const buttonLabel = editMode ? "Korrektur speichern" : (reg.kind === "waitlist" && lowerWait.length ? "Trotz Reihenfolge einchecken" : "Check-in abschließen");
-    html += `<div class="checkin-actions"><button id="completeCheckin" class="${reg.kind === "waitlist" && lowerWait.length ? "danger" : "success-button"} full-width" type="button">${U.escapeHtml(buttonLabel)}</button><button class="secondary full-width" data-next-scan type="button">Abbrechen und weiter scannen</button></div>`;
+    let buttonLabel = "Check-in abschließen";
+    let buttonClass = "success-button";
+    if (editMode) {
+      buttonLabel = "Korrektur speichern";
+    } else if (reg.status === "cancelled") {
+      buttonLabel = "Stornierte Anmeldung ausnahmsweise einchecken";
+      buttonClass = "danger";
+    } else if (reg.kind === "waitlist" && lowerWait.length) {
+      buttonLabel = "Trotz Reihenfolge einchecken";
+      buttonClass = "danger";
+    }
+
+    html += `<div class="checkin-actions"><button id="completeCheckin" class="${buttonClass} full-width" type="button">${U.escapeHtml(buttonLabel)}</button><button class="secondary full-width" data-next-scan type="button">Abbrechen und weiter scannen</button></div>`;
     setResultHtml(html);
 
     $("resultContent").querySelectorAll("[data-counter]").forEach(button => button.addEventListener("click", () => changeCounter(button.dataset.counter, Number(button.dataset.delta))));
@@ -332,9 +376,13 @@
   }
 
   function registrationIdentity(reg) {
-    const kindLabel = reg.kind === "waitlist" ? "Warteliste" : "Reguläre Anmeldung";
-    const kindClass = reg.kind === "waitlist" ? "tag-wait" : "tag-regular";
-    return `<div class="card"><div class="registration-head"><div><div class="registration-number">${U.escapeHtml(reg.number)}</div><div class="registration-name">${U.escapeHtml(reg.name)}</div></div><span class="status-tag ${kindClass}">${kindLabel}</span></div><dl class="detail-grid"><dt>Angemeldet</dt><dd>${U.sumCounts(reg.booked)} Personen</dd><dt>Veranstaltung</dt><dd>${U.escapeHtml(U.displayDate(reg.eventDate))}</dd></dl></div>`;
+    let kindLabel = reg.kind === "waitlist" ? "Warteliste" : "Reguläre Anmeldung";
+    let kindClass = reg.kind === "waitlist" ? "tag-wait" : "tag-regular";
+    if (reg.status === "cancelled") {
+      kindLabel = "Storniert";
+      kindClass = "tag-cancelled";
+    }
+    return `<div class="card"><div class="registration-head"><div><div class="registration-number">${U.escapeHtml(reg.number)}</div><div class="registration-name">${U.escapeHtml(reg.name)}</div></div><span class="status-tag ${kindClass}">${kindLabel}</span></div><dl class="detail-grid"><dt>Ursprünglich angemeldet</dt><dd>${U.sumCounts(reg.booked)} Personen</dd><dt>Veranstaltung</dt><dd>${U.escapeHtml(U.displayDate(reg.eventDate))}</dd></dl></div>`;
   }
 
   function countsReadout(counts) {
@@ -364,19 +412,27 @@
 
     const warnings = [];
     const lowerWait = lowerOpenWaitlist(reg);
-    if (reg.kind === "waitlist" && lowerWait.length) {
+
+    if (reg.status === "cancelled") {
+      warnings.push(`${reg.number} wurde storniert und besitzt keinen regulär reservierten Platz.`);
+    }
+
+    if (reg.kind === "waitlist" && reg.status === "active" && lowerWait.length) {
       warnings.push(`Vor ${reg.number} sind noch ${lowerWait.map(item => item.number).join(", ")} offen.`);
     }
 
-    if (reg.kind === "waitlist") {
+    if (reg.kind === "waitlist" || reg.status === "cancelled") {
       const s = stats();
-      if (total > s.safeFree) {
-        warnings.push(`Aktuell sind nur ${s.safeFree} Plätze sicher frei. Dieser Check-in umfasst ${total} Personen.`);
+      const previousTotal = editMode && checkins[reg.token] ? U.sumCounts(checkins[reg.token].counts) : 0;
+      const availableForThisBooking = s.safeFree + previousTotal;
+      if (total > availableForThisBooking) {
+        warnings.push(`Für diese Buchung sind aktuell höchstens ${availableForThisBooking} Plätze sicher verfügbar. Der Check-in umfasst ${total} Personen.`);
       }
     }
 
     if (warnings.length) {
-      const confirmed = await confirmModal("Ausnahme bestätigen", `<p>${warnings.map(text => U.escapeHtml(text)).join("</p><p>")}</p><p>Der Vorgang wird in der späteren Produktivversion als bewusste Ausnahme protokolliert.</p>`, "Trotzdem einchecken", true);
+      const title = reg.status === "cancelled" ? "Stornierte Anmeldung bestätigen" : "Ausnahme bestätigen";
+      const confirmed = await confirmModal(title, `<p>${warnings.map(text => U.escapeHtml(text)).join("</p><p>")}</p><p>Die Personen werden auf die Kapazität angerechnet und in der Übersicht gesondert ausgewiesen.</p>`, reg.status === "cancelled" ? "Als Ausnahme einchecken" : "Trotzdem einchecken", true);
       if (!confirmed) return;
     }
 
@@ -384,7 +440,8 @@
       counts: U.clone(currentCounts),
       checkedAt: new Date().toISOString(),
       override: warnings.length > 0,
-      corrected: Boolean(editMode)
+      corrected: Boolean(editMode),
+      entryType: reg.status === "cancelled" ? "cancelled-exception" : reg.kind
     };
     STORE.saveCheckins(checkins);
     renderSuccess(reg, editMode);
@@ -395,9 +452,11 @@
     const total = U.sumCounts(actual.counts);
     const s = stats();
     $("headerPresent").textContent = s.present;
-    let html = `<div class="alert alert-success"><h3>${corrected ? "Korrektur gespeichert" : "Check-in erfolgreich"}</h3><p><strong>${U.escapeHtml(reg.name)}</strong> · ${U.escapeHtml(reg.number)}</p><p><strong>${total} Personen</strong> wurden übernommen.</p></div>`;
+    const isCancelledException = reg.status === "cancelled";
+    const heading = corrected ? "Korrektur gespeichert" : (isCancelledException ? "Ausnahme-Check-in erfolgreich" : "Check-in erfolgreich");
+    let html = `<div class="alert ${isCancelledException ? "alert-warning" : "alert-success"}"><h3>${heading}</h3><p><strong>${U.escapeHtml(reg.name)}</strong> · ${U.escapeHtml(reg.number)}</p><p><strong>${total} Personen</strong> wurden übernommen.</p>${isCancelledException ? "<p>Diese Personen werden als stornierte Ausnahme gezählt.</p>" : ""}</div>`;
     html += countsReadout(actual.counts);
-    html += `<div class="card"><h3>Aktueller Gesamtstand</h3><dl class="detail-grid"><dt>Regulär eingecheckt</dt><dd>${s.regularCheckedPersons}</dd><dt>Warteliste eingecheckt</dt><dd>${s.waitCheckedPersons}</dd><dt>Gesamt anwesend</dt><dd>${s.present} / ${DATA.activeEvent.maxPersons}</dd><dt>Sicher freie Plätze</dt><dd>${s.safeFree}</dd></dl></div>`;
+    html += `<div class="card"><h3>Aktueller Gesamtstand</h3><dl class="detail-grid"><dt>Regulär eingecheckt</dt><dd>${s.regularCheckedPersons}</dd><dt>Warteliste eingecheckt</dt><dd>${s.waitCheckedPersons}</dd><dt>Stornierte Ausnahmen</dt><dd>${s.exceptionCheckedPersons}</dd><dt>Gesamt anwesend</dt><dd>${s.present} / ${DATA.activeEvent.maxPersons}</dd><dt>Von Anfang an nicht vergeben</dt><dd>${s.initiallyUnallocated}</dd><dt>Sicher freie Plätze</dt><dd>${s.safeFree}</dd></dl></div>`;
     html += `<div class="checkin-actions"><button class="primary full-width" data-next-scan type="button">Nächsten QR-Code scannen</button><button class="secondary full-width" data-overview type="button">Gesamtübersicht öffnen</button></div>`;
     setResultHtml(html);
     $("resultContent").querySelector("[data-overview]").addEventListener("click", () => navigate("overview"));
@@ -413,7 +472,12 @@
     }
     $("searchResults").innerHTML = results.map(reg => {
       const existing = checkins[reg.token];
-      const status = reg.status === "cancelled" ? ["Storniert", "tag-cancelled"] : existing ? ["Eingecheckt", "tag-checked"] : reg.kind === "waitlist" ? ["Warteliste", "tag-wait"] : ["Regulär", "tag-regular"];
+      let status;
+      if (reg.status === "cancelled" && existing) status = ["Ausnahme", "tag-exception"];
+      else if (reg.status === "cancelled") status = ["Storniert", "tag-cancelled"];
+      else if (existing) status = ["Eingecheckt", "tag-checked"];
+      else if (reg.kind === "waitlist") status = ["Warteliste", "tag-wait"];
+      else status = ["Regulär", "tag-regular"];
       return `<button class="search-result" type="button" data-token="${U.escapeHtml(reg.token)}"><span class="search-number">${U.escapeHtml(reg.number)}</span><span class="search-name">${U.escapeHtml(reg.name)}</span><span class="status-tag ${status[1]}">${status[0]}</span></button>`;
     }).join("");
     $("searchResults").querySelectorAll("[data-token]").forEach(button => button.addEventListener("click", () => processToken(button.dataset.token)));
@@ -433,16 +497,25 @@
         ${summaryCard("Gesamt anwesend", s.present, "success", `von ${DATA.activeEvent.maxPersons}`)}
         ${summaryCard("Regulär", s.regularCheckedPersons, "info", `${s.regularCheckedBookings} Buchungen`)}
         ${summaryCard("Warteliste", s.waitCheckedPersons, "warning", `${s.waitCheckedBookings} Buchungen`)}
+        ${summaryCard("Stornierte Ausnahmen", s.exceptionCheckedPersons, s.exceptionCheckedPersons ? "warning" : "info", `${s.exceptionCheckedBookings} Buchungen`)}
+        ${summaryCard("Von Anfang an frei", s.initiallyUnallocated, "info", `${s.confirmedBookedPersons} regulär angemeldet`)}
         ${summaryCard("Sicher frei", s.safeFree, s.safeFree ? "success" : "warning", "Plätze")}
       </div>
       <div class="card overview-section">
         <h3>Kapazitätsbetrachtung</h3>
         <dl class="detail-grid">
+          <dt>Maximale Kapazität</dt><dd>${DATA.activeEvent.maxPersons}</dd>
+          <dt>Regulär bestätigte Personen</dt><dd>${s.confirmedBookedPersons}</dd>
+          <dt>Von Anfang an nicht vergeben</dt><dd>${s.initiallyUnallocated}</dd>
           <dt>Reguläre Personen noch nicht eingecheckt</dt><dd>${s.regularNotCheckedPersons}</dd>
           <dt>Noch offene reguläre Buchungen</dt><dd>${s.regularNotCheckedBookings}</dd>
-          <dt>Durch Minderteilnahme freigeworden</dt><dd>${s.missingVsBooked}</dd>
-          <dt>Sicher freie Plätze</dt><dd>${s.safeFree}</dd>
+          <dt>Durch Minderteilnahme zusätzlich frei</dt><dd>${s.missingVsBooked}</dd>
+          <dt>Mehr erschienen als angemeldet</dt><dd>${s.extraVsBooked}</dd>
+          <dt>Wartelistenpersonen aufgenommen</dt><dd>${s.waitCheckedPersons}</dd>
+          <dt>Stornierte Ausnahmen aufgenommen</dt><dd>${s.exceptionCheckedPersons}</dd>
+          <dt><strong>Sicher freie Plätze</strong></dt><dd><strong>${s.safeFree}</strong></dd>
         </dl>
+        ${s.overCapacityRisk ? `<div class="alert alert-danger"><strong>Achtung:</strong> Bei Erscheinen aller noch erwarteten regulären Personen würden ${s.overCapacityRisk} Plätze fehlen.</div>` : ""}
       </div>
       <div class="card overview-section">
         <h3>Bereits eingecheckt</h3>
@@ -465,7 +538,10 @@
     const record = checkins[reg.token];
     const actual = U.sumCounts(record.counts);
     const booked = U.sumCounts(reg.booked);
-    const tag = reg.kind === "waitlist" ? `<span class="status-tag tag-wait">Warteliste</span>` : `<span class="status-tag tag-regular">Regulär</span>`;
+    let tag;
+    if (reg.status === "cancelled") tag = `<span class="status-tag tag-exception">Stornierte Ausnahme</span>`;
+    else if (reg.kind === "waitlist") tag = `<span class="status-tag tag-wait">Warteliste</span>`;
+    else tag = `<span class="status-tag tag-regular">Regulär</span>`;
     return `<button class="overview-row" type="button" data-token="${U.escapeHtml(reg.token)}"><span>${tag}</span><span class="name"><strong>${U.escapeHtml(reg.number)}</strong> · ${U.escapeHtml(reg.name)}<br><small>${U.escapeHtml(U.displayTime(record.checkedAt))} Uhr</small></span><span class="numbers">${actual}<br><small>von ${booked}</small></span></button>`;
   }
 

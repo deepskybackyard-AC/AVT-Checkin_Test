@@ -2,17 +2,17 @@
 
 window.AVT_CONFIG = Object.freeze({
   appName: "AVT Check-in Demo",
-  version: "0.1.0-test.1",
+  version: "0.1.0-test.2",
   demoPassword: "avt-demo",
   familyDefaultPersons: 3,
   maxConfirmedPersons: 65,
   eventTime: "21:30",
   eventTitle: "Öffentliche Sternführung",
   eventId: "AVT-DEMO-CURRENT",
-  qrPrefix: "AVT-CHECKIN-DEMO:",
+  qrPrefix: "AVT-CHECKIN-DEMO-V2:",
   storageKeys: {
-    login: "avt-checkin-demo-login-v1",
-    checkins: "avt-checkin-demo-checkins-v1"
+    login: "avt-checkin-demo-login-v2",
+    checkins: "avt-checkin-demo-checkins-v2"
   }
 });
 
