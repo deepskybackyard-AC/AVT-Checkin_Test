@@ -1,14 +1,13 @@
 # Changelog
 
-## 0.2.0-test.4
+## 0.2.0-test.5
 
-- Familientarifregel auf mindestens 1 Erwachsene:n, mindestens 1 ermäßigte
-  Familienperson und regulären Eintritt über 10 € korrigiert.
-- Kinder unter 6, Jugendliche/Schüler:innen und Studierende zählen als
-  ermäßigte Familienpersonen.
-- Sofortige Aktualisierung des sichtbaren zu zahlenden Betrags repariert.
-- Beim Leeren des Korrekturbetrags wird der Basistarif sofort wiederhergestellt.
-- „Kein Grund“ setzt Grund und Korrekturbetrag zurück.
-- 0,00 € wird als gültiger korrigierter Eintritt akzeptiert.
-- Korrekturgründe werden bereits aus einer konfigurierbaren Demoliste erzeugt.
-- Neue V6-Test-QR-Codes.
+- Vereinsmitglied überschreibt vorhandenen Korrekturbetrag nicht mehr.
+- Sicher freie Plätze wieder im Veranstaltungskopf.
+- Wartelistenwarnung mit weiterhin möglichem Ausnahme-Check-in.
+- Hilfetext unter der Eintrittskorrektur entfernt.
+- Vollständiger Name im kompakten Check-in-Kopf.
+- Mehrere Personen-IDs je Anmeldung mit Button „IDs (n)“.
+- Suche über alle zugehörigen IDs.
+- Versionsunabhängiger Login-Speicherschlüssel.
+- Neue V7-Test-QR-Codes.

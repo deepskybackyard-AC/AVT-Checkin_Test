@@ -1,8 +1,8 @@
 "use strict";
 window.AVT_CONFIG = Object.freeze({
-  version: "0.2.0-test.4",
+  version: "0.2.0-test.5",
   password: "avt-demo",
-  qrPrefix: "AVT-CHECKIN-DEMO-V6:",
+  qrPrefix: "AVT-CHECKIN-DEMO-V7:",
   event: {
     id: "EVT-DEMO-2026-07-15",
     title: "Sternführung",
@@ -41,11 +41,11 @@ window.AVT_CONFIG = Object.freeze({
     }
   ],
   storageKeys: {
-    login: "avt-checkin-demo-login-v6",
-    data: "avt-checkin-demo-data-v6"
+    login: "avt-checkin-login",
+    data: "avt-checkin-demo-data-v7"
   }
 });
-window.AVT_REGISTRATIONS = Object.freeze([{"token": "T6-A01", "number": "A-01", "name": "Anna Beispiel", "status": "confirmed", "eventId": "EVT-DEMO-2026-07-15", "booked": {"adult": 2, "child": 0, "youth": 0, "student": 0}, "scenario": "2 Erwachsene"}, {"token": "T6-A02", "number": "A-02", "name": "Familie Muster", "status": "confirmed", "eventId": "EVT-DEMO-2026-07-15", "booked": {"adult": 2, "child": 2, "youth": 0, "student": 0}, "scenario": "Familientarif möglich"}, {"token": "T6-A03", "number": "A-03", "name": "Jugendgruppe Beispiel", "status": "confirmed", "eventId": "EVT-DEMO-2026-07-15", "booked": {"adult": 1, "child": 0, "youth": 3, "student": 0}, "scenario": "Erwachsene und Jugendliche"}, {"token": "T6-A04", "number": "A-04", "name": "Studierende Beispiel", "status": "confirmed", "eventId": "EVT-DEMO-2026-07-15", "booked": {"adult": 0, "child": 0, "youth": 0, "student": 3}, "scenario": "Studierende"}, {"token": "T6-A05", "number": "A-05", "name": "Storniert Beispiel", "status": "cancelled", "eventId": "EVT-DEMO-2026-07-15", "booked": {"adult": 2, "child": 0, "youth": 1, "student": 0}, "scenario": "Stornierte Ausnahme"}, {"token": "T6-A06", "number": "A-06", "name": "Minderteilnahme Beispiel", "status": "confirmed", "eventId": "EVT-DEMO-2026-07-15", "booked": {"adult": 3, "child": 1, "youth": 0, "student": 0}, "scenario": "Personenzahl reduzieren"}, {"token": "T6-W01", "number": "W-01", "name": "Warteliste Eins", "status": "waitlist", "eventId": "EVT-DEMO-2026-07-15", "booked": {"adult": 2, "child": 0, "youth": 0, "student": 0}, "waitNo": 1, "scenario": "Erster Warteplatz"}, {"token": "T6-W06", "number": "W-06", "name": "Warteliste Sechs", "status": "waitlist", "eventId": "EVT-DEMO-2026-07-15", "booked": {"adult": 1, "child": 1, "youth": 0, "student": 0}, "waitNo": 6, "scenario": "Frühere W-Nummern offen"}, {"token": "T6-WRONG", "number": "A-99", "name": "Falsche Veranstaltung", "status": "confirmed", "eventId": "EVT-OTHER", "booked": {"adult": 1, "child": 0, "youth": 0, "student": 0}, "scenario": "Falsche Veranstaltung"}]);
+window.AVT_REGISTRATIONS = Object.freeze([{"token": "T7-A01", "number": "A-001", "ids": ["A-001", "A-002"], "name": "Anna Beispiel", "status": "confirmed", "eventId": "EVT-DEMO-2026-07-15", "booked": {"adult": 2, "child": 0, "youth": 0, "student": 0}, "scenario": "2 Erwachsene · 2 IDs"}, {"token": "T7-A02", "number": "A-003", "ids": ["A-003", "A-004", "A-005", "A-006"], "name": "Familie Muster", "status": "confirmed", "eventId": "EVT-DEMO-2026-07-15", "booked": {"adult": 2, "child": 2, "youth": 0, "student": 0}, "scenario": "Familientarif · 4 IDs"}, {"token": "T7-A03", "number": "A-007", "ids": ["A-007", "A-008", "A-009", "A-010"], "name": "Jugendgruppe Beispiel", "status": "confirmed", "eventId": "EVT-DEMO-2026-07-15", "booked": {"adult": 1, "child": 0, "youth": 3, "student": 0}, "scenario": "1 Erwachsener + 3 Jugendliche"}, {"token": "T7-A04", "number": "A-011", "ids": ["A-011", "A-012", "A-013"], "name": "Studierende Beispiel", "status": "confirmed", "eventId": "EVT-DEMO-2026-07-15", "booked": {"adult": 0, "child": 0, "youth": 0, "student": 3}, "scenario": "3 Studierende"}, {"token": "T7-A05", "number": "A-014", "ids": ["A-014", "A-015", "A-016"], "name": "Storniert Beispiel", "status": "cancelled", "eventId": "EVT-DEMO-2026-07-15", "booked": {"adult": 2, "child": 0, "youth": 1, "student": 0}, "scenario": "Stornierte Ausnahme"}, {"token": "T7-A06", "number": "A-017", "ids": ["A-017", "A-018", "A-019", "A-020"], "name": "Minderteilnahme Beispiel", "status": "confirmed", "eventId": "EVT-DEMO-2026-07-15", "booked": {"adult": 3, "child": 1, "youth": 0, "student": 0}, "scenario": "3 Erwachsene + 1 Kind"}, {"token": "T7-W01", "number": "W-001", "ids": ["W-001", "W-002"], "name": "Warteliste Eins", "status": "waitlist", "eventId": "EVT-DEMO-2026-07-15", "booked": {"adult": 2, "child": 0, "youth": 0, "student": 0}, "waitNo": 1, "scenario": "Erster Warteplatz · 2 IDs"}, {"token": "T7-W06", "number": "W-006", "ids": ["W-006", "W-007"], "name": "Warteliste Sechs", "status": "waitlist", "eventId": "EVT-DEMO-2026-07-15", "booked": {"adult": 1, "child": 1, "youth": 0, "student": 0}, "waitNo": 6, "scenario": "Frühere Wartelistennummern offen"}, {"token": "T7-WRONG", "number": "A-099", "ids": ["A-099"], "name": "Falsche Veranstaltung", "status": "confirmed", "eventId": "EVT-OTHER", "booked": {"adult": 1, "child": 0, "youth": 0, "student": 0}, "scenario": "Falsche Veranstaltung"}]);
 window.AVT_UTIL = Object.freeze({
   esc(value) {
     return String(value ?? "")

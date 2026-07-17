@@ -1,22 +1,18 @@
 # Projektstatus – AVT Check-in
 
-Aktuelle Version: 0.2.0-test.4
+Aktuelle Version: 0.2.0-test.5
 
-Diese Version dient weiterhin dem Test auf einem einzelnen Gerät.
+Diese Version bildet die endgültig vorgesehenen lokalen Bedienabläufe ab:
 
-## Festgelegte Regeln
+- vollständiger Name nach Scan,
+- eine eigene ID je angemeldeter Person,
+- kompakte ID-Liste,
+- sichere freie Plätze,
+- Wartelistenreihenfolge mit bewusstem Ausnahme-Check-in,
+- Eintritt, Familientarif, Korrekturgründe und Spenden.
 
-- Familientarif 10 €:
-  mindestens 1 Erwachsene:r, mindestens 1 Person aus Kinder unter 6,
-  Jugendliche/Schüler:innen oder Studierende und regulärer Eintritt über 10 €.
-- Gründe für korrigierten Eintritt werden später im Google-Sheet gepflegt.
-- Die Grundauswahl enthält immer „Kein Grund“.
-- 0,00 € ist ein gültiger Korrekturbetrag.
-- Ein leerer Korrekturbetrag verwendet wieder den ausgewählten Basistarif.
-
-## Nächster Schritt
-
-Nach Bestätigung:
-- gemeinsames Apps-Script-Test-Backend anpassen,
-- Test mit zwei Geräten,
-- gemeinsame Check-ins, Einnahmen und Spenden prüfen.
+Nächster Schritt nach Bestätigung:
+- gemeinsames Apps-Script-Test-Backend,
+- Test mit zwei oder mehr Geräten,
+- serverseitiger Schutz gegen Doppel-Check-ins,
+- gemeinsame Statistik und Einnahmen.

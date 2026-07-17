@@ -182,10 +182,17 @@
     return { regular, wait, exceptions, manual, present, confirmed, initially, expected, safe, entry, donations, total: entry + donations };
   }
 
+  function updateHeaderStats() {
+    const currentStats = stats();
+    $("presentTop").textContent = currentStats.present;
+    $("safeFreeTop").textContent = currentStats.safe;
+    $("safeFreeTop").textContent = currentStats.safe;
+  }
+
   function renderAll() {
     renderHome();
     renderOverview();
-    $("presentTop").textContent = stats().present;
+    updateHeaderStats();
   }
 
   function renderHome() {
@@ -274,7 +281,11 @@
       const checked = Boolean(data.checkins[registration.token]);
       if (searchFilter === "open" && checked) return false;
       if (searchFilter === "checked" && !checked) return false;
-      if (query && !registration.number.toLowerCase().includes(query) && !registration.name.toLowerCase().includes(query)) return false;
+      const searchableIds = (registration.ids || [registration.number]).join(" ").toLowerCase();
+      if (query &&
+          !registration.number.toLowerCase().includes(query) &&
+          !registration.name.toLowerCase().includes(query) &&
+          !searchableIds.includes(query)) return false;
       return true;
     });
 
@@ -301,8 +312,9 @@
       stateClass = "cancelled";
     }
 
+    const idCount = (registration.ids || [registration.number]).length;
     return `<button class="registration-entry" data-token="${registration.token}">
-      <span class="registration-entry-main"><strong>${registration.number} · ${U.esc(registration.name)}</strong><small>${U.sumCounts(registration.booked)} angemeldete Personen</small></span>
+      <span class="registration-entry-main"><strong>${U.esc(registration.name)}</strong><small>${U.sumCounts(registration.booked)} Personen · ${idCount} IDs</small></span>
       <span class="registration-state ${stateClass}">${U.esc(stateText)}</span>
     </button>`;
   }
@@ -331,14 +343,17 @@
       warning = '<div class="card dangerbox"><strong>Stornierte Anmeldung</strong><p>Ein Check-in ist nur als ausdrückliche Ausnahme möglich.</p></div>';
     }
     if (waitBlock.length) {
-      warning = `<div class="card warning"><strong>${current.number} ist noch nicht an der Reihe</strong><p>Vorher offen: ${waitBlock.map(item => item.number).join(", ")}</p></div>`;
+      warning = `<div class="card warning"><strong>Diese Wartelistenanmeldung ist noch nicht an der Reihe.</strong><p>Vorher müssen grundsätzlich noch folgende Wartelisten-IDs berücksichtigt werden:</p><ul class="wait-warning-list">${waitBlock.map(item => `<li>${U.esc((item.ids || [item.number]).join(", "))}</li>`).join("")}</ul><p>Ein Check-in ist nach zusätzlicher Bestätigung trotzdem möglich.</p></div>`;
     }
 
     $("resultContent").innerHTML = `
       <div class="card ${tone}">
-        <div class="result-head">
-          <div><h2>${current.number}</h2><h3>${U.esc(current.name)}</h3></div>
-          <span class="badge">${labelStatus(current.status)}</span>
+        <div class="result-head result-head-compact">
+          <div><h2>${U.esc(current.name)}</h2></div>
+          <div class="result-actions">
+            <span class="badge">${labelStatus(current.status)}</span>
+            <button id="showIdsButton" class="ids-button secondary" type="button">IDs (${(current.ids || [current.number]).length})</button>
+          </div>
         </div>
       </div>
       ${warning}
@@ -350,7 +365,21 @@
 
     bindCounters(false);
     bindPrice();
+    $("showIdsButton").onclick = showCurrentIds;
     $("completeBtn").onclick = completeExisting;
+  }
+
+  function showCurrentIds() {
+    const ids = current?.ids || [current?.number].filter(Boolean);
+    $("modalTitle").textContent = `Check-in-IDs (${ids.length})`;
+    $("modalBody").innerHTML = `<div class="ids-list">${ids.map(id => `<span>${U.esc(id)}</span>`).join("")}</div>`;
+    $("modalConfirm").textContent = "Schließen";
+    $("modalCancel").classList.add("hidden");
+    $("modal").classList.remove("hidden");
+
+    modalResolve = () => {
+      $("modalCancel").classList.remove("hidden");
+    };
   }
 
   function labelStatus(status) {
@@ -490,7 +519,7 @@
             </select>
           </label>
         </div>
-        <p class="compact-help">„Kein Grund“ hebt die Korrektur auf. Auch 0,00 € ist ein gültiger Betrag.</p>
+
       </div>
     </div>`;
   }
@@ -528,9 +557,13 @@
 
       if (!reason) {
         correctedEntry = "";
-      } else if (reason.defaultAmount !== null && reason.defaultAmount !== undefined) {
+      } else if (
+        String(correctedEntry).trim() === "" &&
+        reason.defaultAmount !== null &&
+        reason.defaultAmount !== undefined
+      ) {
         correctedEntry = String(reason.defaultAmount);
-      } else {
+      } else if (reason.amountRequired && String(correctedEntry).trim() === "") {
         correctedEntry = "";
       }
 
@@ -583,7 +616,9 @@
 
     let message = `${current.number} mit ${U.sumCounts(counts)} Personen und ${U.euro(chosenPrice())} Eintritt einchecken?`;
     if (current.status === "cancelled") message = "Stornierte Anmeldung als Ausnahme: " + message;
-    if (current.status === "waitlist" && earlierWait().length) message = `Frühere Wartelistennummern sind noch offen. ${message}`;
+    if (current.status === "waitlist" && earlierWait().length) {
+      message = `Frühere Wartelistenanmeldungen sind noch offen. Trotzdem fortfahren? ${message}`;
+    }
 
     if (!(await confirmBox("Check-in bestätigen", message, "Einchecken"))) return;
 
@@ -713,7 +748,7 @@
     S.save(data);
     renderDonationPanel();
     renderHome();
-    $("presentTop").textContent = stats().present;
+    updateHeaderStats();
     toast("Spende wurde erfasst.");
   }
 
@@ -777,6 +812,7 @@
 
   function closeModal(value) {
     $("modal").classList.add("hidden");
+    $("modalCancel").classList.remove("hidden");
     if (modalResolve) modalResolve(value);
     modalResolve = null;
   }

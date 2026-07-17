@@ -1,35 +1,21 @@
-# AVT Check-in Demo 0.2.0-test.4
+# AVT Check-in Demo 0.2.0-test.5
 
-Lokale Ein-Gerät-Testversion vor dem Mehrgeräte-Test.
+Voraussichtlich letzte lokale Ein-Gerät-Testversion vor dem gemeinsamen Test mit zwei Geräten.
 
-## Korrigiert
+## Neu und korrigiert
 
-- Der sichtbare Betrag „Zu zahlender Eintritt“ wird bei jeder Eingabe im Feld
-  „Korrigierter Eintritt“ sofort aktualisiert.
-- Wird das Feld wieder vollständig geleert, erscheint sofort wieder der
-  reguläre Tarif oder der ausgewählte Familientarif.
-- Der Wert 0,00 € ist ein gültiger korrigierter Eintritt.
-- Die Auswahlliste „Grund“ kann über „Kein Grund“ wieder in den Ausgangszustand
-  zurückgesetzt werden. Dabei werden Grund und Korrekturbetrag entfernt.
-- Die Gründe stammen in dieser Demo bereits aus einer konfigurierbaren Liste.
-  Später wird diese Liste aus dem Google-Sheet geladen.
-
-## Familientarif
-
-Der Familientarif beträgt 10 € und ist nur aktiv, wenn:
-
-- mindestens 1 erwachsene Person vorhanden ist,
-- mindestens 1 Person aus Kinder unter 6, Jugendliche/Schüler:innen oder
-  Studierende vorhanden ist,
-- der reguläre Eintritt mehr als 10 € beträgt.
-
-Beispiele:
-
-- 1 Erwachsener + 1 Kind = 7 €: Familientarif nicht aktiv
-- 1 Erwachsener + 3 Kinder = 11 €: Familientarif aktiv
-- 1 Erwachsener + 1 Kind + 1 Schüler:in + 1 Studierende:r = 11 €:
-  Familientarif aktiv
-- Regulärer Eintritt genau 10 €: Familientarif nicht aktiv
+- Bei „Vereinsmitglied“ wird 0,00 € nur eingesetzt, wenn noch kein korrigierter Betrag eingetragen wurde.
+- Ein bereits eingetragener Betrag bleibt bei Auswahl des Grundes erhalten.
+- Der Hilfetext unter Korrekturbetrag und Grund wurde aus Platzgründen entfernt.
+- Unter „x von y Personen eingecheckt“ werden wieder die sicher freien Plätze angezeigt.
+- Bei höheren Wartelistennummern erscheint eine deutliche Warnung über noch offene frühere Wartelistenanmeldungen.
+- Der Check-in bleibt nach zusätzlicher Bestätigung trotzdem möglich.
+- Nach einem QR-Scan wird der vollständige Name kompakt angezeigt.
+- Die einzelne sichtbare Anmelde-ID entfällt im Check-in-Kopf.
+- Ein kompakter Button „IDs (n)“ zeigt alle zur Anmeldung gehörenden Personen-IDs.
+- Die Demo bildet jetzt ausdrücklich eine eigene ID je angemeldeter Person ab.
+- Die Suche findet Anmeldungen auch über jede einzelne zugehörige ID.
+- Der dauerhafte Login verwendet jetzt einen versionsunabhängigen Speicherschlüssel und bleibt bei späteren Updates erhalten.
 
 ## Testpasswort
 
@@ -37,6 +23,4 @@ Beispiele:
 
 ## Hinweis
 
-Alle Daten werden weiterhin ausschließlich auf einem Gerät gespeichert.
-Die nächste Entwicklungsstufe ist nach Bestätigung dieser Version der Test
-mit zwei Geräten und einem gemeinsamen Apps-Script-Test-Backend.
+Die Check-in-Daten dieser Version werden wegen des neuen Mehrfach-ID-Datenmodells noch einmal in einem neuen lokalen Testspeicher geführt. Der dauerhaft gespeicherte Login ist davon unabhängig.
