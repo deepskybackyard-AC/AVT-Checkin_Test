@@ -1,18 +1,20 @@
 # Changelog
 
-## 0.1.0-test.3
+## 0.2.0-test.2
 
-- Der auffällige gelbe Demo-Hinweis wurde aus dem laufenden Check-in-Bereich entfernt. Die DEMO-Kennzeichnung im Kopf bleibt bestehen.
-- Der Familienhinweis wird nur noch bei einer tatsächlichen Familienanmeldung angezeigt.
-- Die Schaltfläche oben rechts meldet nicht mehr ab. Sie aktualisiert ausschließlich die angezeigte Check-in-Statistik.
-- Beim Aktualisieren bleiben Anmeldung, aktueller Bildschirm und bereits eingegebene Personenzahlen erhalten.
-- Auf der Erfolgsseite werden die Statistikwerte ebenfalls ohne Seitenwechsel aktualisiert.
-- Die Abmeldung wurde als separate Schaltfläche an das Ende der Gesamtübersicht verschoben.
-- Vorbereitung für die kommende gemeinsame Mehrgeräte-Datenquelle: Die Aktualisierungsfunktion liest ihre Daten bereits über eine zentrale Aktualisierungsroutine ein.
 
-## 0.1.0-test.2
+- Kategorien exakt wie in der Voranmeldung:
+  - Erwachsene: 5 €
+  - Kinder unter 6 Jahren: 2 €
+  - Jugendliche / Schüler:innen: 2 €
+  - Studierende: 2 €
+- Familienkategorie und Familien-Default entfallen.
+- Familientarif: 10 € bei mindestens zwei Erwachsenen und mindestens einer ermäßigten Person.
+- Regulärer Preis und Familientarif sind manuell auswählbar.
+- Eintrittsbetrag kann zusätzlich manuell korrigiert werden.
+- Eigener spontaner Check-in ohne Voranmeldung.
+- Vier reine Symboltasten in einer Zeile, auch für iPhone 12 mini.
+- Spenden können separat erfasst werden.
+- Übersicht mit Eintritt, Spenden und Gesamteinnahmen.
+- Neue V4-Test-QR-Codes.
 
-- Automatischer Kamerastart
-- stornierte Ausnahme-Check-ins
-- Kapazitätsdarstellung mit 45 bestätigten und 20 freien Plätzen
-- neue Test-QR-Codes

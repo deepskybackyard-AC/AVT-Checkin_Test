@@ -1,7 +1,28 @@
-# AVT Check-in Frontend 0.2.0-test.1
+# AVT Check-in Demo 0.2.0-test.2
 
-Den **Inhalt dieses Ordners** in die Wurzelebene des GitHub-Repositorys `AVT-Checkin_Test` hochladen und vorhandene Dateien ersetzen.
+Lokale Ein-Gerät-Testversion vor dem Mehrgeräte-Test.
 
-Nach Veröffentlichung wird die Apps-Script-Web-App-URL direkt auf der Loginseite eingetragen. Eine Änderung von `config.js` ist dafür nicht erforderlich.
+## Neu
 
-Die App ist ohne eingerichtetes Test-Backend nicht nutzbar und speichert bewusst keine Check-ins nur lokal.
+- Kategorien exakt wie in der Voranmeldung:
+  - Erwachsene: 5 €
+  - Kinder unter 6 Jahren: 2 €
+  - Jugendliche / Schüler:innen: 2 €
+  - Studierende: 2 €
+- Familienkategorie und Familien-Default entfallen.
+- Familientarif: 10 € bei mindestens zwei Erwachsenen und mindestens einer ermäßigten Person.
+- Regulärer Preis und Familientarif sind manuell auswählbar.
+- Eintrittsbetrag kann zusätzlich manuell korrigiert werden.
+- Eigener spontaner Check-in ohne Voranmeldung.
+- Vier reine Symboltasten in einer Zeile, auch für iPhone 12 mini.
+- Spenden können separat erfasst werden.
+- Übersicht mit Eintritt, Spenden und Gesamteinnahmen.
+- Neue V4-Test-QR-Codes.
+
+## Testpasswort
+
+`avt-demo`
+
+## Hinweis
+
+Alle Daten werden ausschließlich lokal auf diesem einen Gerät gespeichert. Erst nach Bestätigung dieser Version folgt der gemeinsame Zwei-Geräte-Test.

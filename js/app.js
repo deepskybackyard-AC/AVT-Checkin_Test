@@ -1,807 +1,204 @@
 "use strict";
-
-(function () {
-  const C = window.AVT_CONFIG;
-  const U = window.AVT_UTIL;
-  const STORE = window.AVT_STORAGE;
-  const BACKEND = window.AVT_BACKEND;
-  const SCANNER = window.AVT_SCANNER;
-
-  const categoryMeta = {
-    adult: { label: "Erwachsene", short: "Erw." },
-    student: { label: "Studierende", short: "Stud." },
-    child: { label: "Kinder", short: "Kinder" },
-    family: { label: "Familie (Personen)", short: "Familie" }
-  };
-
-  let state = null;
-  let login = null;
-  let currentRegistration = null;
-  let currentCounts = null;
-  let currentExpectedRevision = null;
-  let modalResolver = null;
-  let cameraStarting = false;
-  let refreshTimer = null;
-  let refreshInFlight = false;
-  let lastResultWasSuccess = false;
-
-  const $ = id => document.getElementById(id);
-  const panels = ["homePanel", "scanPanel", "searchPanel", "resultPanel", "overviewPanel"];
-
-  async function init() {
-    $("versionLabel").textContent = `Version ${C.version}`;
-    $("backendUrlInput").value = STORE.getBackendUrl();
-    bindEvents();
-    setConnectionStatus("Noch nicht mit dem gemeinsamen Test-Backend verbunden.", "idle");
-
-    const storedLogin = STORE.getLogin();
-    if (!storedLogin) {
-      showLogin();
-      return;
-    }
-
-    login = storedLogin;
-    $("backendUrlInput").value = login.backendUrl;
-    setLoginBusy(true, "Gespeicherte Anmeldung wird geprüft …");
-    try {
-      await BACKEND.connect(login.backendUrl);
-      const response = await BACKEND.request("state", {}, login.token);
-      if (!response.ok) throw apiError(response);
-      applyState(response.state);
-      showMain();
-    } catch (error) {
-      STORE.clearLogin();
-      login = null;
-      showLogin();
-      setConnectionStatus(error.message || "Gespeicherte Anmeldung konnte nicht verwendet werden.", "error");
-    } finally {
-      setLoginBusy(false);
-    }
-  }
-
-  function bindEvents() {
-    $("loginForm").addEventListener("submit", handleLogin);
-    $("testBackendButton").addEventListener("click", testBackendConnection);
-    $("togglePassword").addEventListener("click", () => {
-      const input = $("passwordInput");
-      input.type = input.type === "password" ? "text" : "password";
-      $("togglePassword").textContent = input.type === "password" ? "Anzeigen" : "Verbergen";
-    });
-    $("refreshButton").addEventListener("click", () => refreshStatistics({ silent: false }));
-    $("logoutButton").addEventListener("click", logout);
-    document.querySelectorAll("[data-nav]").forEach(button => button.addEventListener("click", () => navigate(button.dataset.nav)));
-    $("startCameraButton").addEventListener("click", startCamera);
-    $("cameraPlaceholder").addEventListener("click", startCamera);
-    $("stopCameraButton").addEventListener("click", stopCameraUi);
-    $("imageInput").addEventListener("change", handleImageFile);
-    $("searchInput").addEventListener("input", renderSearchResults);
-    $("modalCancel").addEventListener("click", () => closeModal(false));
-    $("modalConfirm").addEventListener("click", () => closeModal(true));
-    $("modalBackdrop").addEventListener("click", event => {
-      if (event.target === $("modalBackdrop")) closeModal(false);
-    });
-    window.addEventListener("online", () => {
-      setSyncStatus("Internetverbindung wiederhergestellt · aktualisiere …", "pending");
-      void refreshStatistics({ silent: true });
-    });
-    window.addEventListener("offline", () => setSyncStatus("Offline · Check-in derzeit nicht möglich", "error"));
-  }
-
-  function showLogin() {
-    stopAutoRefresh();
-    SCANNER.stop();
-    $("loginView").classList.remove("hidden");
-    $("mainView").classList.add("hidden");
-    $("refreshButton").classList.add("hidden");
-    setTimeout(() => $("passwordInput").focus(), 50);
-  }
-
-  function showMain() {
-    $("loginView").classList.add("hidden");
-    $("mainView").classList.remove("hidden");
-    $("refreshButton").classList.remove("hidden");
-    renderEvent();
-    navigate("home");
-    startAutoRefresh();
-  }
-
-  async function handleLogin(event) {
-    event.preventDefault();
-    const password = $("passwordInput").value;
-    const mode = new FormData(event.currentTarget).get("loginStorage") || "day";
-    let backendUrl;
-    try {
-      backendUrl = BACKEND.normalizeUrl($("backendUrlInput").value);
-    } catch (error) {
-      setConnectionStatus(error.message, "error");
-      return;
-    }
-
-    setLoginBusy(true, "Verbindung und Passwort werden geprüft …");
-    try {
-      STORE.saveBackendUrl(backendUrl);
-      await BACKEND.connect(backendUrl);
-      const response = await BACKEND.request("login", {
-        password,
-        mode,
-        deviceId: STORE.getDeviceId()
-      });
-      if (!response.ok) throw apiError(response);
-
-      STORE.saveLogin(response, mode, backendUrl);
-      login = STORE.getLogin();
-      applyState(response.state);
-      $("loginError").textContent = "";
-      $("passwordInput").value = "";
-      setConnectionStatus(`Verbunden mit Backend ${state.backendVersion}.`, "success");
-      showMain();
-    } catch (error) {
-      $("loginError").textContent = error.message || "Anmeldung fehlgeschlagen.";
-      setConnectionStatus(error.message || "Backend-Verbindung fehlgeschlagen.", "error");
-    } finally {
-      setLoginBusy(false);
-    }
-  }
-
-  async function testBackendConnection() {
-    let backendUrl;
-    try {
-      backendUrl = BACKEND.normalizeUrl($("backendUrlInput").value);
-    } catch (error) {
-      setConnectionStatus(error.message, "error");
-      return;
-    }
-
-    $("testBackendButton").disabled = true;
-    setConnectionStatus("Test-Backend wird kontaktiert …", "pending");
-    try {
-      const response = await BACKEND.health(backendUrl);
-      if (!response.ok) throw apiError(response);
-      STORE.saveBackendUrl(backendUrl);
-      setConnectionStatus(`Verbindung erfolgreich · Backend ${response.backendVersion}`, "success");
-    } catch (error) {
-      setConnectionStatus(error.message || "Verbindung fehlgeschlagen.", "error");
-    } finally {
-      $("testBackendButton").disabled = false;
-    }
-  }
-
-  async function logout() {
-    SCANNER.stop();
-    stopAutoRefresh();
-    try {
-      if (login?.token) await BACKEND.request("logout", {}, login.token);
-    } catch {
-      // Lokale Abmeldung muss auch bei fehlender Verbindung möglich bleiben.
-    }
-    STORE.clearLogin();
-    login = null;
-    state = null;
-    BACKEND.disconnect();
-    showLogin();
-    setConnectionStatus("Abgemeldet. Backend-URL bleibt auf diesem Gerät gespeichert.", "idle");
-  }
-
-  async function refreshStatistics({ silent = false } = {}) {
-    if (!login || refreshInFlight) return false;
-    refreshInFlight = true;
-    const button = $("refreshButton");
-    button.disabled = true;
-    button.classList.add("is-refreshing");
-    if (!silent) setSyncStatus("Gemeinsamer Stand wird aktualisiert …", "pending");
-
-    try {
-      const response = await BACKEND.request("state", {}, login.token);
-      if (!response.ok) throw apiError(response);
-      applyState(response.state);
-      updateVisibleStatistics();
-
-      if (!$("homePanel").classList.contains("hidden")) renderDashboard();
-      else if (!$("overviewPanel").classList.contains("hidden")) renderOverview();
-      else if (!$("searchPanel").classList.contains("hidden")) renderSearchResults();
-
-      if (!silent) showToast("Gemeinsame Statistik wurde aktualisiert.");
-      return true;
-    } catch (error) {
-      if (error.code === "SESSION_INVALID") {
-        await forceRelogin(error.message);
-      } else {
-        setSyncStatus(error.message || "Aktualisierung fehlgeschlagen.", "error");
-        if (!silent) showToast("Aktualisierung fehlgeschlagen.");
-      }
-      return false;
-    } finally {
-      refreshInFlight = false;
-      button.disabled = false;
-      button.classList.remove("is-refreshing");
-    }
-  }
-
-  function startAutoRefresh() {
-    stopAutoRefresh();
-    refreshTimer = window.setInterval(() => {
-      if (document.hidden || !login || cameraStarting || !$("scanPanel").classList.contains("hidden")) return;
-      void refreshStatistics({ silent: true });
-    }, C.autoRefreshMs);
-  }
-
-  function stopAutoRefresh() {
-    if (refreshTimer) clearInterval(refreshTimer);
-    refreshTimer = null;
-  }
-
-  function applyState(nextState) {
-    if (!nextState?.activeEvent || !Array.isArray(nextState.registrations) || !nextState.checkins || !nextState.stats) {
-      throw new Error("Das Test-Backend hat unvollständige Daten geliefert.");
-    }
-    state = nextState;
-    if (currentRegistration) currentRegistration = registrationByToken(currentRegistration.token) || currentRegistration;
-    renderEvent();
-    updateVisibleStatistics();
-    setSyncStatus(`Gemeinsamer Stand · ${U.displayTime(state.serverTime)} Uhr · Revision ${state.revision}`, "success");
-  }
-
-  function updateVisibleStatistics() {
-    if (!state) return;
-    const s = state.stats;
-    $("headerPresent").textContent = s.present;
-    const values = {
-      regularCheckedPersons: s.regularCheckedPersons,
-      waitCheckedPersons: s.waitCheckedPersons,
-      exceptionCheckedPersons: s.exceptionCheckedPersons,
-      present: `${s.present} / ${state.activeEvent.maxPersons}`,
-      initiallyUnallocated: s.initiallyUnallocated,
-      safeFree: s.safeFree
-    };
-    document.querySelectorAll("[data-stat]").forEach(node => {
-      const key = node.dataset.stat;
-      if (Object.prototype.hasOwnProperty.call(values, key)) node.textContent = values[key];
-    });
-  }
-
-  function renderEvent() {
-    if (!state) return;
-    $("eventTitle").textContent = state.activeEvent.title;
-    $("eventDateTime").textContent = `${U.displayDate(state.activeEvent.date)} · ${state.activeEvent.time} Uhr`;
-    $("headerCapacity").textContent = state.activeEvent.maxPersons;
-  }
-
-  function navigate(target) {
-    SCANNER.stop();
-    cameraStarting = false;
-    lastResultWasSuccess = false;
-    panels.forEach(id => $(id).classList.add("hidden"));
-    const id = `${target}Panel`;
-    if ($(id)) $(id).classList.remove("hidden"); else $("homePanel").classList.remove("hidden");
-    if (target === "home") {
-      renderDashboard();
-    } else if (target === "overview") {
-      renderOverview();
-    } else if (target === "search") {
-      $("searchInput").value = "";
-      renderSearchResults();
-      setTimeout(() => $("searchInput").focus(), 50);
-    } else if (target === "scan") {
-      resetScannerUi();
-      void startCamera();
-    }
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  function renderDashboard() {
-    if (!state) return;
-    const s = state.stats;
-    $("summaryCards").innerHTML = [
-      summaryCard("Aktuell anwesend", `${s.present}`, "success", `von ${state.activeEvent.maxPersons}`),
-      summaryCard("Regulär eingecheckt", `${s.regularCheckedPersons}`, "info", `${s.regularCheckedBookings} Buchungen`),
-      summaryCard("Warteliste eingecheckt", `${s.waitCheckedPersons}`, "warning", `${s.waitCheckedBookings} Buchungen`),
-      summaryCard("Stornierte Ausnahmen", `${s.exceptionCheckedPersons}`, s.exceptionCheckedPersons ? "warning" : "info", `${s.exceptionCheckedBookings} Buchungen`),
-      summaryCard("Von Anfang an frei", `${s.initiallyUnallocated}`, "info", `${s.confirmedBookedPersons} regulär angemeldet`),
-      summaryCard("Sicher freie Plätze", `${s.safeFree}`, s.safeFree ? "success" : "warning", `noch ${s.regularNotCheckedPersons} regulär erwartet`)
-    ].join("");
-
-    const scenarioTokens = [
-      "T3-A01-VALID", "T3-A02-FAMILY", "T3-A04-ALREADY", "T3-A05-CANCELLED",
-      "T3-A06-GROUP", "T3-W01-FIRST", "T3-W06-BLOCKED", "T3-X-WRONG-EVENT"
-    ];
-    $("scenarioButtons").innerHTML = scenarioTokens.map(token => {
-      const reg = registrationByToken(token);
-      if (!reg) return "";
-      return `<button type="button" class="scenario-button" data-token="${U.escapeHtml(token)}"><strong>${U.escapeHtml(reg.number)}</strong> · ${U.escapeHtml(reg.scenario || reg.name)}</button>`;
-    }).join("") + `<button type="button" class="scenario-button" id="resetDemoButton"><strong>↺</strong> Gemeinsame Test-Check-ins zurücksetzen</button>`;
-
-    $("scenarioButtons").querySelectorAll("[data-token]").forEach(button => button.addEventListener("click", () => void processToken(button.dataset.token)));
-    $("resetDemoButton").addEventListener("click", resetSharedDemo);
-  }
-
-  async function resetSharedDemo() {
-    const yes = await confirmModal(
-      "Gemeinsame Testdaten zurücksetzen",
-      "Alle Check-ins auf allen verbundenen Geräten werden zurückgesetzt. A-04 bleibt als vorbereiteter Doppel-Check-in-Test bestehen.",
-      "Für alle Geräte zurücksetzen"
-    );
-    if (!yes) return;
-    try {
-      const response = await BACKEND.request("reset", {}, login.token);
-      if (!response.ok) throw apiError(response);
-      applyState(response.state);
-      renderDashboard();
-      showToast("Gemeinsame Test-Check-ins wurden zurückgesetzt.");
-    } catch (error) {
-      handleOperationalError(error);
-    }
-  }
-
-  function summaryCard(label, value, tone, footer) {
-    return `<div class="summary-card ${tone}"><div class="summary-label">${U.escapeHtml(label)}</div><strong>${U.escapeHtml(value)}</strong><div class="summary-label">${U.escapeHtml(footer)}</div></div>`;
-  }
-
-  function resetScannerUi() {
-    cameraStarting = false;
-    $("startCameraButton").disabled = false;
-    $("cameraVideo").classList.add("hidden");
-    $("cameraPlaceholder").classList.remove("hidden");
-    $("scanLine").classList.add("hidden");
-    $("startCameraButton").classList.remove("hidden");
-    $("stopCameraButton").classList.add("hidden");
-    $("cameraStatus").textContent = "Kamera wird automatisch gestartet …";
-    $("imageInput").value = "";
-  }
-
-  async function startCamera() {
-    if (cameraStarting) return;
-    cameraStarting = true;
-    try {
-      $("startCameraButton").disabled = true;
-      SCANNER.setStatus("Kamera wird geöffnet …");
-      await SCANNER.start(payload => void handleQrPayload(payload));
-      $("cameraPlaceholder").classList.add("hidden");
-      $("cameraVideo").classList.remove("hidden");
-      $("scanLine").classList.remove("hidden");
-      $("startCameraButton").classList.add("hidden");
-      $("stopCameraButton").classList.remove("hidden");
-    } catch (error) {
-      SCANNER.setStatus(cameraErrorText(error));
-      $("cameraPlaceholder").classList.remove("hidden");
-      $("startCameraButton").classList.remove("hidden");
-      $("startCameraButton").disabled = false;
-    } finally {
-      cameraStarting = false;
-    }
-  }
-
-  function stopCameraUi() {
-    SCANNER.stop();
-    resetScannerUi();
-  }
-
-  function cameraErrorText(error) {
-    if (location.protocol !== "https:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
-      return "Kamerazugriff benötigt HTTPS. Bitte die Demo über GitHub Pages oder einen HTTPS-Webserver öffnen.";
-    }
-    if (error?.name === "NotAllowedError") return "Kamerazugriff wurde nicht erlaubt. Bitte in den Browser-Einstellungen freigeben.";
-    if (error?.name === "NotFoundError") return "Keine geeignete Kamera gefunden.";
-    return error?.message || "Kamera konnte nicht gestartet werden.";
-  }
-
-  async function handleImageFile(event) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    try {
-      SCANNER.setStatus("Bild wird ausgewertet …");
-      const payload = await SCANNER.decodeImageFile(file);
-      await handleQrPayload(payload);
-    } catch (error) {
-      SCANNER.setStatus(error.message);
-    }
-  }
-
-  async function handleQrPayload(payload) {
-    const text = String(payload || "").trim();
-    if (!text.startsWith(C.qrPrefix)) {
-      showInvalidCode("Dieser QR-Code gehört nicht zu dieser AVT-Check-in-Testversion.");
-      return;
-    }
-    await processToken(text.slice(C.qrPrefix.length));
-  }
-
-  async function processToken(token) {
-    const refreshed = await refreshStatistics({ silent: true });
-    if (!refreshed && !state) {
-      showConnectionError("Die Anmeldung konnte wegen einer fehlenden Serververbindung nicht geprüft werden.");
-      return;
-    }
-    const registration = registrationByToken(token);
-    if (!registration) {
-      showInvalidCode("Der QR-Code ist unbekannt oder nicht mehr gültig.");
-      return;
-    }
-    currentRegistration = registration;
-    currentCounts = U.clone(registration.booked);
-    currentExpectedRevision = null;
-    renderRegistrationResult();
-    panels.forEach(id => $(id).classList.add("hidden"));
-    $("resultPanel").classList.remove("hidden");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  function showInvalidCode(message) {
-    currentRegistration = null;
-    currentExpectedRevision = null;
-    $("resultContent").innerHTML = `<div class="alert alert-danger"><h3>QR-Code nicht gültig</h3><p>${U.escapeHtml(message)}</p></div><button class="primary full-width" data-next-scan type="button">Nächsten QR-Code scannen</button>`;
-    $("resultContent").querySelector("[data-next-scan]").addEventListener("click", () => navigate("scan"));
-    panels.forEach(id => $(id).classList.add("hidden"));
-    $("resultPanel").classList.remove("hidden");
-  }
-
-  function showConnectionError(message) {
-    $("resultContent").innerHTML = `<div class="alert alert-danger"><h3>Keine Serververbindung</h3><p>${U.escapeHtml(message)}</p><p>Aus Sicherheitsgründen wird ohne gemeinsamen Serverstand kein Check-in gespeichert.</p></div><button class="secondary full-width" data-nav-home type="button">Zur Startseite</button>`;
-    $("resultContent").querySelector("[data-nav-home]").addEventListener("click", () => navigate("home"));
-    panels.forEach(id => $(id).classList.add("hidden"));
-    $("resultPanel").classList.remove("hidden");
-  }
-
-  function renderRegistrationResult(editMode = false) {
-    const reg = registrationByToken(currentRegistration.token) || currentRegistration;
-    currentRegistration = reg;
-    const existing = state.checkins[reg.token];
-    const eventMismatch = !isCurrentEvent(reg);
-    const lowerWait = lowerOpenWaitlist(reg);
-    let html = "";
-
-    if (eventMismatch) {
-      html += `<div class="alert alert-danger"><h3>Falsche Veranstaltung</h3><p>Dieser QR-Code gehört zur Veranstaltung am <strong>${U.escapeHtml(U.displayDate(reg.eventDate))}</strong>. Aktiv ist ${U.escapeHtml(U.displayDate(state.activeEvent.date))} um ${U.escapeHtml(state.activeEvent.time)} Uhr.</p></div>`;
-      html += registrationIdentity(reg);
-      html += `<button class="primary full-width" data-next-scan type="button">Nächsten QR-Code scannen</button>`;
-      setResultHtml(html);
-      return;
-    }
-
-    if (existing && !editMode) {
-      const actual = U.sumCounts(existing.counts);
-      const isCancelledException = reg.status === "cancelled";
-      html += `<div class="alert ${isCancelledException ? "alert-warning" : "alert-success"}"><h3>${isCancelledException ? "Bereits als Ausnahme eingecheckt" : "Bereits eingecheckt"}</h3><p>${U.escapeHtml(reg.number)} wurde um <strong>${U.escapeHtml(U.displayTime(existing.checkedAt))} Uhr</strong> mit <strong>${actual} Personen</strong> eingecheckt.</p><p class="muted small">Der gemeinsame Server verhindert einen zweiten Check-in.</p></div>`;
-      html += registrationIdentity(reg);
-      html += countsReadout(existing.counts);
-      html += `<div class="checkin-actions"><button class="secondary full-width" data-edit type="button">Check-in korrigieren</button><button class="primary full-width" data-next-scan type="button">Nächsten QR-Code scannen</button></div>`;
-      setResultHtml(html);
-      $("resultContent").querySelector("[data-edit]").addEventListener("click", () => {
-        currentCounts = U.clone(existing.counts);
-        currentExpectedRevision = existing.revision;
-        renderRegistrationResult(true);
-      });
-      return;
-    }
-
-    if (reg.status === "cancelled") {
-      html += `<div class="alert alert-danger"><h3>Anmeldung storniert</h3><p>${U.escapeHtml(reg.number)} besitzt keinen regulär reservierten Platz. Ein Check-in ist nur als bewusste Ausnahme nach zusätzlicher Bestätigung möglich.</p></div>`;
-    }
-
-    if (reg.kind === "waitlist" && reg.status === "active") {
-      if (lowerWait.length) {
-        const people = lowerWait.reduce((sum, item) => sum + U.sumCounts(item.booked), 0);
-        html += `<div class="alert alert-warning"><h3>${U.escapeHtml(reg.number)} ist noch nicht an der Reihe</h3><p>Vorher sind noch <strong>${lowerWait.length} Wartelistenbuchungen mit ${people} Personen</strong> offen:</p><div class="waiting-order">${lowerWait.map(item => `<span class="wait-chip">${U.escapeHtml(item.number)}</span>`).join("")}</div></div>`;
-      } else {
-        html += `<div class="alert alert-info"><h3>Warteliste</h3><p>${U.escapeHtml(reg.number)} ist die kleinste derzeit offene Wartelistennummer.</p></div>`;
-      }
-    }
-
-    html += registrationIdentity(reg);
-    html += counterEditor(currentCounts);
-    html += `<div class="total-box"><span>Tatsächlich einzuchecken</span><strong id="totalPersons">${U.sumCounts(currentCounts)}</strong></div>`;
-
-    let buttonLabel = "Check-in abschließen";
-    let buttonClass = "success-button";
-    if (editMode) buttonLabel = "Korrektur speichern";
-    else if (reg.status === "cancelled") {
-      buttonLabel = "Stornierte Anmeldung ausnahmsweise einchecken";
-      buttonClass = "danger";
-    } else if (reg.kind === "waitlist" && lowerWait.length) {
-      buttonLabel = "Trotz Reihenfolge einchecken";
-      buttonClass = "danger";
-    }
-
-    html += `<div class="checkin-actions"><button id="completeCheckin" class="${buttonClass} full-width" type="button">${U.escapeHtml(buttonLabel)}</button><button class="secondary full-width" data-next-scan type="button">Abbrechen und weiter scannen</button></div>`;
-    setResultHtml(html);
-    $("resultContent").querySelectorAll("[data-counter]").forEach(button => button.addEventListener("click", () => changeCounter(button.dataset.counter, Number(button.dataset.delta))));
-    $("completeCheckin").addEventListener("click", () => void completeCheckin(editMode));
-  }
-
-  function setResultHtml(html) {
-    $("resultContent").innerHTML = html;
-    $("resultContent").querySelectorAll("[data-next-scan]").forEach(button => button.addEventListener("click", () => navigate("scan")));
-  }
-
-  function registrationIdentity(reg) {
-    let kindLabel = reg.kind === "waitlist" ? "Warteliste" : "Reguläre Anmeldung";
-    let kindClass = reg.kind === "waitlist" ? "tag-wait" : "tag-regular";
-    if (reg.status === "cancelled") {
-      kindLabel = "Storniert";
-      kindClass = "tag-cancelled";
-    }
-    return `<div class="card"><div class="registration-head"><div><div class="registration-number">${U.escapeHtml(reg.number)}</div><div class="registration-name">${U.escapeHtml(reg.name)}</div></div><span class="status-tag ${kindClass}">${kindLabel}</span></div><dl class="detail-grid"><dt>Ursprünglich angemeldet</dt><dd>${U.sumCounts(reg.booked)} Personen</dd><dt>Veranstaltung</dt><dd>${U.escapeHtml(U.displayDate(reg.eventDate))}</dd></dl></div>`;
-  }
-
-  function countsReadout(counts) {
-    const rows = Object.entries(counts).filter(([, value]) => value > 0).map(([key, value]) => `<dt>${U.escapeHtml(categoryMeta[key].label)}</dt><dd>${value}</dd>`).join("");
-    return `<div class="card"><h3>Tatsächliche Personenzahl</h3><dl class="detail-grid">${rows}<dt><strong>Gesamt</strong></dt><dd><strong>${U.sumCounts(counts)}</strong></dd></dl></div>`;
-  }
-
-  function counterEditor(counts) {
-    const familyHint = Number(currentRegistration?.booked?.family || 0) > 0
-      ? `<p class="muted small family-hint">Bei einer Familienanmeldung startet der Check-in mit dem Standardwert ${state.activeEvent.familyDefaultPersons} Personen.</p>`
-      : "";
-    return `<div class="card"><h3>Personenzahl anpassen</h3><div class="counter-list">${Object.entries(counts).filter(([, value]) => value > 0).map(([key, value]) => `<div class="counter-row"><div class="counter-label">${U.escapeHtml(categoryMeta[key].label)}</div><button type="button" class="counter-button" data-counter="${key}" data-delta="-1" aria-label="${U.escapeHtml(categoryMeta[key].label)} verringern">−</button><div id="counter-${key}" class="counter-value">${value}</div><button type="button" class="counter-button" data-counter="${key}" data-delta="1" aria-label="${U.escapeHtml(categoryMeta[key].label)} erhöhen">+</button></div>`).join("")}</div>${familyHint}</div>`;
-  }
-
-  function changeCounter(key, delta) {
-    currentCounts[key] = Math.max(0, Math.min(30, Number(currentCounts[key] || 0) + delta));
-    const value = $(`counter-${key}`);
-    if (value) value.textContent = currentCounts[key];
-    $("totalPersons").textContent = U.sumCounts(currentCounts);
-    $("completeCheckin").disabled = U.sumCounts(currentCounts) < 1;
-  }
-
-  async function completeCheckin(editMode, confirmationKey = "") {
-    const reg = currentRegistration;
-    const total = U.sumCounts(currentCounts);
-    if (total < 1) {
-      showToast("Mindestens eine Person muss eingecheckt werden.");
-      return;
-    }
-
-    const button = $("completeCheckin");
-    if (button) {
-      button.disabled = true;
-      button.textContent = "Wird gespeichert …";
-    }
-
-    try {
-      const existing = state.checkins[reg.token] || null;
-      const response = await BACKEND.request("checkin", {
-        registrationToken: reg.token,
-        counts: U.clone(currentCounts),
-        expectedRevision: editMode ? currentExpectedRevision : null,
-        confirmationKey
-      }, login.token);
-
-      if (!response.ok) throw apiError(response);
-      if (response.state) applyState(response.state);
-
-      if (response.confirmationRequired) {
-        const title = reg.status === "cancelled" ? "Stornierte Anmeldung bestätigen" : "Ausnahme bestätigen";
-        const confirmed = await confirmModal(
-          title,
-          `<p>${response.warnings.map(text => U.escapeHtml(text)).join("</p><p>")}</p><p>Die Personen werden auf die Kapazität angerechnet und gesondert ausgewiesen.</p>`,
-          reg.status === "cancelled" ? "Als Ausnahme einchecken" : "Trotzdem einchecken",
-          true
-        );
-        if (confirmed) return completeCheckin(editMode, response.confirmationKey);
-        renderRegistrationResult(editMode);
-        return;
-      }
-
-      currentRegistration = registrationByToken(reg.token) || reg;
-      currentExpectedRevision = null;
-      renderSuccess(currentRegistration, Boolean(response.saved?.corrected));
-    } catch (error) {
-      if (["ALREADY_CHECKED", "CONFLICT"].includes(error.code) && error.data?.state) {
-        applyState(error.data.state);
-        currentRegistration = registrationByToken(reg.token) || reg;
-        currentCounts = U.clone(currentRegistration.booked);
-        currentExpectedRevision = null;
-        showToast(error.message);
-        renderRegistrationResult(false);
-      } else {
-        handleOperationalError(error);
-        renderRegistrationResult(editMode);
-      }
-    }
-  }
-
-  function renderSuccess(reg, corrected) {
-    const actual = state.checkins[reg.token];
-    const total = U.sumCounts(actual.counts);
-    const s = state.stats;
-    const isCancelledException = reg.status === "cancelled";
-    const heading = corrected ? "Korrektur gespeichert" : (isCancelledException ? "Ausnahme-Check-in erfolgreich" : "Check-in erfolgreich");
-    let html = `<div class="alert ${isCancelledException ? "alert-warning" : "alert-success"}"><h3>${heading}</h3><p><strong>${U.escapeHtml(reg.name)}</strong> · ${U.escapeHtml(reg.number)}</p><p><strong>${total} Personen</strong> wurden auf dem gemeinsamen Server übernommen.</p>${isCancelledException ? "<p>Diese Personen werden als stornierte Ausnahme gezählt.</p>" : ""}</div>`;
-    html += countsReadout(actual.counts);
-    html += `<div class="card"><h3>Aktueller gemeinsamer Gesamtstand</h3><dl class="detail-grid"><dt>Regulär eingecheckt</dt><dd data-stat="regularCheckedPersons">${s.regularCheckedPersons}</dd><dt>Warteliste eingecheckt</dt><dd data-stat="waitCheckedPersons">${s.waitCheckedPersons}</dd><dt>Stornierte Ausnahmen</dt><dd data-stat="exceptionCheckedPersons">${s.exceptionCheckedPersons}</dd><dt>Gesamt anwesend</dt><dd data-stat="present">${s.present} / ${state.activeEvent.maxPersons}</dd><dt>Von Anfang an nicht vergeben</dt><dd data-stat="initiallyUnallocated">${s.initiallyUnallocated}</dd><dt>Sicher freie Plätze</dt><dd data-stat="safeFree">${s.safeFree}</dd></dl></div>`;
-    html += `<div class="checkin-actions"><button class="primary full-width" data-next-scan type="button">Nächsten QR-Code scannen</button><button class="secondary full-width" data-overview type="button">Gesamtübersicht öffnen</button></div>`;
-    setResultHtml(html);
-    lastResultWasSuccess = true;
-    $("resultContent").querySelector("[data-overview]").addEventListener("click", () => navigate("overview"));
-  }
-
-  function renderSearchResults() {
-    if (!state) return;
-    const query = $("searchInput").value.trim().toLocaleLowerCase("de-DE");
-    const candidates = state.registrations.filter(reg => isCurrentEvent(reg));
-    const results = (query ? candidates.filter(reg => `${reg.number} ${reg.name}`.toLocaleLowerCase("de-DE").includes(query)) : candidates.slice(0, 8)).slice(0, 15);
-    if (!results.length) {
-      $("searchResults").innerHTML = `<div class="empty-state">Keine passende Anmeldung gefunden.</div>`;
-      return;
-    }
-    $("searchResults").innerHTML = results.map(reg => {
-      const existing = state.checkins[reg.token];
-      let status;
-      if (reg.status === "cancelled" && existing) status = ["Ausnahme", "tag-exception"];
-      else if (reg.status === "cancelled") status = ["Storniert", "tag-cancelled"];
-      else if (existing) status = ["Eingecheckt", "tag-checked"];
-      else if (reg.kind === "waitlist") status = ["Warteliste", "tag-wait"];
-      else status = ["Regulär", "tag-regular"];
-      return `<button class="search-result" type="button" data-token="${U.escapeHtml(reg.token)}"><span class="search-number">${U.escapeHtml(reg.number)}</span><span class="search-name">${U.escapeHtml(reg.name)}</span><span class="status-tag ${status[1]}">${status[0]}</span></button>`;
-    }).join("");
-    $("searchResults").querySelectorAll("[data-token]").forEach(button => button.addEventListener("click", () => void processToken(button.dataset.token)));
-  }
-
-  function renderOverview() {
-    if (!state) return;
-    const s = state.stats;
-    const checkedRows = state.registrations
-      .filter(reg => state.checkins[reg.token] && isCurrentEvent(reg))
-      .sort((a, b) => new Date(state.checkins[b.token].checkedAt) - new Date(state.checkins[a.token].checkedAt));
-    const openRegular = state.registrations.filter(reg => reg.kind === "regular" && reg.status === "active" && isCurrentEvent(reg) && !state.checkins[reg.token]);
-
-    $("overviewContent").innerHTML = `
-      <div class="summary-grid">
-        ${summaryCard("Gesamt anwesend", s.present, "success", `von ${state.activeEvent.maxPersons}`)}
-        ${summaryCard("Regulär", s.regularCheckedPersons, "info", `${s.regularCheckedBookings} Buchungen`)}
-        ${summaryCard("Warteliste", s.waitCheckedPersons, "warning", `${s.waitCheckedBookings} Buchungen`)}
-        ${summaryCard("Stornierte Ausnahmen", s.exceptionCheckedPersons, s.exceptionCheckedPersons ? "warning" : "info", `${s.exceptionCheckedBookings} Buchungen`)}
-        ${summaryCard("Von Anfang an frei", s.initiallyUnallocated, "info", `${s.confirmedBookedPersons} regulär angemeldet`)}
-        ${summaryCard("Sicher frei", s.safeFree, s.safeFree ? "success" : "warning", "Plätze")}
-      </div>
-      <div class="card overview-section">
-        <h3>Kapazitätsbetrachtung</h3>
-        <dl class="detail-grid">
-          <dt>Maximale Kapazität</dt><dd>${state.activeEvent.maxPersons}</dd>
-          <dt>Regulär bestätigte Personen</dt><dd>${s.confirmedBookedPersons}</dd>
-          <dt>Von Anfang an nicht vergeben</dt><dd>${s.initiallyUnallocated}</dd>
-          <dt>Reguläre Personen noch nicht eingecheckt</dt><dd>${s.regularNotCheckedPersons}</dd>
-          <dt>Noch offene reguläre Buchungen</dt><dd>${s.regularNotCheckedBookings}</dd>
-          <dt>Durch Minderteilnahme zusätzlich frei</dt><dd>${s.missingVsBooked}</dd>
-          <dt>Mehr erschienen als angemeldet</dt><dd>${s.extraVsBooked}</dd>
-          <dt>Wartelistenpersonen aufgenommen</dt><dd>${s.waitCheckedPersons}</dd>
-          <dt>Stornierte Ausnahmen aufgenommen</dt><dd>${s.exceptionCheckedPersons}</dd>
-          <dt><strong>Sicher freie Plätze</strong></dt><dd><strong>${s.safeFree}</strong></dd>
-        </dl>
-        ${s.overCapacityRisk ? `<div class="alert alert-danger"><strong>Achtung:</strong> Bei Erscheinen aller noch erwarteten regulären Personen würden ${s.overCapacityRisk} Plätze fehlen.</div>` : ""}
-      </div>
-      <div class="card overview-section">
-        <h3>Bereits eingecheckt – alle Geräte</h3>
-        <div class="overview-list">${checkedRows.length ? checkedRows.map(overviewRow).join("") : `<div class="empty-state">Noch keine Check-ins.</div>`}</div>
-      </div>
-      <div class="card overview-section">
-        <h3>Regulär noch offen</h3>
-        <p class="muted small">${openRegular.length} Buchungen · ${s.regularNotCheckedPersons} Personen</p>
-        <div class="overview-list">${openRegular.slice(0, 12).map(openRow).join("")}${openRegular.length > 12 ? `<div class="empty-state">… und ${openRegular.length - 12} weitere</div>` : ""}</div>
-      </div>
-      <div class="card overview-section">
-        <h3>Offene Warteliste in Reihenfolge</h3>
-        <div class="waiting-order">${s.openWait.length ? s.openWait.map(reg => `<span class="wait-chip">${U.escapeHtml(reg.number)} · ${reg.bookedPersons}</span>`).join("") : `<span class="muted">Keine offenen Wartelisteneinträge.</span>`}</div>
-      </div>`;
-
-    $("overviewContent").querySelectorAll("[data-token]").forEach(button => button.addEventListener("click", () => void processToken(button.dataset.token)));
-  }
-
-  function overviewRow(reg) {
-    const record = state.checkins[reg.token];
-    const actual = U.sumCounts(record.counts);
-    const booked = U.sumCounts(reg.booked);
-    let tag;
-    if (reg.status === "cancelled") tag = `<span class="status-tag tag-exception">Stornierte Ausnahme</span>`;
-    else if (reg.kind === "waitlist") tag = `<span class="status-tag tag-wait">Warteliste</span>`;
-    else tag = `<span class="status-tag tag-regular">Regulär</span>`;
-    return `<button class="overview-row" type="button" data-token="${U.escapeHtml(reg.token)}"><span>${tag}</span><span class="name"><strong>${U.escapeHtml(reg.number)}</strong> · ${U.escapeHtml(reg.name)}<br><small>${U.escapeHtml(U.displayTime(record.checkedAt))} Uhr</small></span><span class="numbers">${actual}<br><small>von ${booked}</small></span></button>`;
-  }
-
-  function openRow(reg) {
-    return `<button class="overview-row" type="button" data-token="${U.escapeHtml(reg.token)}"><span class="status-tag tag-regular">${U.escapeHtml(reg.number)}</span><span class="name">${U.escapeHtml(reg.name)}</span><span class="numbers">${U.sumCounts(reg.booked)}</span></button>`;
-  }
-
-  function registrationByToken(token) {
-    return state?.registrations?.find(reg => reg.token === token) || null;
-  }
-
-  function isCurrentEvent(reg) {
-    return reg.eventId === state.activeEvent.id && reg.eventDate === state.activeEvent.date;
-  }
-
-  function waitNumber(reg) {
-    const match = /^W-(\d+)$/i.exec(reg.number);
-    return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER;
-  }
-
-  function lowerOpenWaitlist(reg) {
-    if (reg.kind !== "waitlist") return [];
-    const current = waitNumber(reg);
-    return state.registrations.filter(item =>
-      item.kind === "waitlist" &&
-      item.status === "active" &&
-      isCurrentEvent(item) &&
-      waitNumber(item) < current &&
-      !state.checkins[item.token]
-    ).sort((a, b) => waitNumber(a) - waitNumber(b));
-  }
-
-  function confirmModal(title, body, confirmText = "Bestätigen", bodyIsHtml = false) {
-    $("modalTitle").textContent = title;
-    $("modalBody").innerHTML = bodyIsHtml ? body : `<p>${U.escapeHtml(body)}</p>`;
-    $("modalConfirm").textContent = confirmText;
-    $("modalBackdrop").classList.remove("hidden");
-    return new Promise(resolve => { modalResolver = resolve; });
-  }
-
-  function closeModal(result) {
-    $("modalBackdrop").classList.add("hidden");
-    if (modalResolver) modalResolver(result);
-    modalResolver = null;
-  }
-
-  function setConnectionStatus(message, tone) {
-    const element = $("backendStatus");
-    element.textContent = message || "";
-    element.dataset.tone = tone || "idle";
-  }
-
-  function setSyncStatus(message, tone) {
-    const element = $("syncStatus");
-    if (!element) return;
-    element.textContent = message || "";
-    element.dataset.tone = tone || "idle";
-  }
-
-  function setLoginBusy(busy, statusText = "") {
-    $("loginSubmitButton").disabled = busy;
-    $("testBackendButton").disabled = busy;
-    $("backendUrlInput").disabled = busy;
-    $("passwordInput").disabled = busy;
-    if (statusText) setConnectionStatus(statusText, "pending");
-  }
-
-  function apiError(response) {
-    const error = new Error(response?.message || "Backend-Aufruf fehlgeschlagen.");
-    error.code = response?.code || "BACKEND_ERROR";
-    error.data = response?.data || null;
-    return error;
-  }
-
-  function handleOperationalError(error) {
-    if (error?.code === "SESSION_INVALID") {
-      void forceRelogin(error.message);
-      return;
-    }
-    setSyncStatus(error?.message || "Serverfehler.", "error");
-    showToast(error?.message || "Vorgang fehlgeschlagen.");
-  }
-
-  async function forceRelogin(message) {
-    STORE.clearLogin();
-    login = null;
-    showLogin();
-    $("loginError").textContent = message || "Bitte erneut anmelden.";
-    setConnectionStatus(message || "Anmeldung abgelaufen.", "error");
-  }
-
-  function showToast(message) {
-    const toast = $("toast");
-    toast.textContent = message;
-    toast.classList.remove("hidden");
-    clearTimeout(showToast.timer);
-    showToast.timer = setTimeout(() => toast.classList.add("hidden"), 3000);
-  }
-
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) SCANNER.stop();
-    else if (login) void refreshStatistics({ silent: true });
-  });
-  window.addEventListener("pagehide", () => SCANNER.stop());
-  document.addEventListener("DOMContentLoaded", () => {
-    void init();
-    if ("serviceWorker" in navigator && ["http:", "https:"].includes(location.protocol)) {
-      navigator.serviceWorker.register("./service-worker.js").catch(() => {});
-    }
-  });
+(function(){
+const C=window.AVT_CONFIG,U=window.AVT_UTIL,S=window.AVT_STORE,SC=window.AVT_SCANNER;
+const $=id=>document.getElementById(id);
+const panels=["homePanel","scanPanel","searchPanel","manualPanel","resultPanel","overviewPanel"];
+const cats={
+ adult:{label:"Erwachsene",price:C.prices.adult},
+ child:{label:"Kinder unter 6",price:C.prices.child},
+ youth:{label:"Jugendliche / Schüler:innen",price:C.prices.youth},
+ student:{label:"Studierende",price:C.prices.student}
+};
+let data=S.load(), current=null, counts=null, priceMode="auto", manualPrice=null, modalResolve=null;
+
+function init(){
+ $("eventTitle").textContent=C.event.title;
+ $("eventTime").textContent=`${U.date(C.event.date)} · ${C.event.time} Uhr`;
+ document.querySelectorAll("[data-nav]").forEach(b=>b.addEventListener("click",()=>nav(b.dataset.nav)));
+ $("loginForm").addEventListener("submit",login);
+ $("refreshBtn").addEventListener("click",()=>{data=S.load();renderAll();toast("Statistik aktualisiert.");});
+ $("logoutBtn").addEventListener("click",()=>{S.clearLogin();showLogin();});
+ $("resetBtn").addEventListener("click",reset);
+ $("donationBtn").addEventListener("click",donation);
+ $("searchInput").addEventListener("input",renderSearch);
+ $("cameraPlaceholder").addEventListener("click",startCamera);
+ $("startCameraButton").addEventListener("click",startCamera);
+ $("stopCameraButton").addEventListener("click",()=>SC.stop());
+ $("imageInput").addEventListener("change",async e=>{try{const r=await SC.decodeFile(e.target.files?.[0]);handlePayload(r.data);}catch(err){toast(err.message||"QR-Code nicht erkannt.");}});
+ $("modalCancel").addEventListener("click",()=>closeModal(false));
+ $("modalConfirm").addEventListener("click",()=>closeModal(true));
+ if(S.getLogin()) showMain(); else showLogin();
+}
+function login(e){
+ e.preventDefault();
+ if($("password").value!==C.password){$("loginError").textContent="Passwort ist falsch.";return;}
+ S.setLogin(new FormData(e.currentTarget).get("mode")||"day");$("password").value="";showMain();
+}
+function showLogin(){$("loginView").classList.remove("hidden");$("mainView").classList.add("hidden");$("refreshBtn").classList.add("hidden");}
+function showMain(){$("loginView").classList.add("hidden");$("mainView").classList.remove("hidden");$("refreshBtn").classList.remove("hidden");nav("home");}
+function nav(name){
+ SC.stop(); panels.forEach(p=>$(p).classList.add("hidden")); const p=$(name+"Panel")||$("homePanel");p.classList.remove("hidden");
+ if(name==="home") renderHome(); if(name==="overview") renderOverview(); if(name==="search"){ $("searchInput").value="";renderSearch();setTimeout(()=>$("searchInput").focus(),30);}
+ if(name==="manual") renderManual(); if(name==="scan"){resetCamera();startCamera();}
+ scrollTo({top:0,behavior:"smooth"});
+}
+function bookedConfirmed(){
+ return window.AVT_REGISTRATIONS.filter(r=>r.status==="confirmed"&&r.eventId===C.event.id).reduce((s,r)=>s+U.sumCounts(r.booked),0);
+}
+function stats(){
+ let regular=0,wait=0,exceptions=0,manual=0,entry=0;
+ Object.values(data.checkins).forEach(x=>{
+  const n=U.sumCounts(x.counts); entry+=Number(x.paid)||0;
+  if(x.kind==="regular")regular+=n; else if(x.kind==="waitlist")wait+=n; else exceptions+=n;
+ });
+ data.manual.forEach(x=>{manual+=U.sumCounts(x.counts);entry+=Number(x.paid)||0;});
+ const donations=data.donations.reduce((s,x)=>s+Number(x.amount||0),0);
+ const present=regular+wait+exceptions+manual;
+ const confirmed=bookedConfirmed();
+ const initially=Math.max(0,C.event.maxPersons-confirmed);
+ let expected=0;
+ window.AVT_REGISTRATIONS.filter(r=>r.status==="confirmed"&&r.eventId===C.event.id).forEach(r=>{
+   const x=data.checkins[r.token]; if(!x) expected+=U.sumCounts(r.booked);
+ });
+ const safe=Math.max(0,C.event.maxPersons-present-expected);
+ return {regular,wait,exceptions,manual,present,confirmed,initially,expected,safe,entry,donations,total:entry+donations};
+}
+function renderAll(){renderHome();renderOverview();$("presentTop").textContent=stats().present;}
+function renderHome(){
+ const s=stats();$("presentTop").textContent=s.present;
+ $("summary").innerHTML=[
+  card("Anwesend",s.present,`von ${C.event.maxPersons}`),
+  card("Sicher frei",s.safe,`${s.expected} regulär erwartet`),
+  card("Eintritt",U.euro(s.entry),"erfasst"),
+  card("Spenden",U.euro(s.donations),"separat")
+ ].join("");
+ $("scenarios").innerHTML=window.AVT_REGISTRATIONS.map(r=>`<button data-token="${r.token}"><strong>${r.number}</strong> · ${U.esc(r.scenario)}</button>`).join("");
+ $("scenarios").querySelectorAll("[data-token]").forEach(b=>b.onclick=()=>processToken(b.dataset.token));
+}
+function card(a,b,c){return `<div class="summary-card"><small>${U.esc(a)}</small><strong>${U.esc(b)}</strong><small>${U.esc(c)}</small></div>`}
+function resetCamera(){
+ $("cameraVideo").classList.add("hidden");$("cameraPlaceholder").classList.remove("hidden");$("startCameraButton").classList.remove("hidden");$("stopCameraButton").classList.add("hidden");$("scanLine").classList.add("hidden");$("cameraStatus").textContent="Kamera wird automatisch gestartet …";
+}
+async function startCamera(){
+ try{
+  await SC.start(x=>handlePayload(x));$("cameraVideo").classList.remove("hidden");$("cameraPlaceholder").classList.add("hidden");$("startCameraButton").classList.add("hidden");$("stopCameraButton").classList.remove("hidden");$("scanLine").classList.remove("hidden");
+ }catch(e){$("cameraStatus").textContent=e.message||"Kamera konnte nicht gestartet werden.";}
+}
+function handlePayload(raw){
+ SC.stop(); let token=String(raw||"").trim(); if(token.startsWith(C.qrPrefix))token=token.slice(C.qrPrefix.length);
+ processToken(token);
+}
+function processToken(token){
+ const r=window.AVT_REGISTRATIONS.find(x=>x.token===token);
+ if(!r){showMessage("Unbekannter QR-Code","Dieser QR-Code gehört nicht zu den Testanmeldungen.","dangerbox");return;}
+ current=r; counts=U.clone(r.booked);priceMode="auto";manualPrice=null;renderResult();
+}
+function renderSearch(){
+ const q=$("searchInput").value.trim().toLowerCase();
+ const list=q?window.AVT_REGISTRATIONS.filter(r=>r.number.toLowerCase().includes(q)||r.name.toLowerCase().includes(q)):[];
+ $("searchResults").innerHTML=list.map(r=>`<button class="full" data-token="${r.token}"><strong>${r.number}</strong> · ${U.esc(r.name)}</button>`).join("") || (q?'<p class="muted">Keine Anmeldung gefunden.</p>':'');
+ $("searchResults").querySelectorAll("button").forEach(b=>b.onclick=()=>processToken(b.dataset.token));
+}
+function renderResult(){
+ panels.forEach(p=>$(p).classList.add("hidden"));$("resultPanel").classList.remove("hidden");
+ if(current.eventId!==C.event.id){showMessage("Falsche Veranstaltung",`${current.number} gehört nicht zur aktiven Veranstaltung.`,"dangerbox");return;}
+ const existing=data.checkins[current.token];
+ if(existing){showMessage("Bereits eingecheckt",`${current.number} wurde bereits mit ${U.sumCounts(existing.counts)} Personen eingecheckt.`,"warning",true);return;}
+ const waitBlock=current.status==="waitlist"?earlierWait():[];
+ let tone=current.status==="cancelled"?"dangerbox":current.status==="waitlist"?"warning":"";
+ let warning="";
+ if(current.status==="cancelled")warning='<div class="card dangerbox"><strong>Stornierte Anmeldung</strong><p>Ein Check-in ist nur als ausdrückliche Ausnahme möglich.</p></div>';
+ if(waitBlock.length)warning=`<div class="card warning"><strong>${current.number} ist noch nicht an der Reihe</strong><p>Vorher offen: ${waitBlock.map(x=>x.number).join(", ")}</p></div>`;
+ $("resultContent").innerHTML=`
+ <div class="card ${tone}"><div class="result-head"><div><h2>${current.number}</h2><h3>${U.esc(current.name)}</h3></div><span class="badge">${labelStatus(current.status)}</span></div></div>
+ ${warning}${counterHtml()}${priceHtml()}
+ <button id="completeBtn" class="primary full">${current.status==="cancelled"?"Stornierte Anmeldung ausnahmsweise einchecken":current.status==="waitlist"?"Warteliste einchecken":"Check-in abschließen"}</button>`;
+ bindCounters();
+ bindPrice();
+ $("completeBtn").onclick=completeExisting;
+}
+function labelStatus(s){return s==="confirmed"?"Reguläre Anmeldung":s==="waitlist"?"Warteliste":"Storniert"}
+function earlierWait(){
+ return window.AVT_REGISTRATIONS.filter(r=>r.status==="waitlist"&&r.waitNo<current.waitNo&&!data.checkins[r.token]);
+}
+function counterHtml(){
+ return `<div class="card"><h3>Personenzahl anpassen</h3>${Object.keys(cats).map(k=>`<div class="counter-row"><span>${cats[k].label}</span><button data-k="${k}" data-d="-1">−</button><div id="n-${k}" class="counter-value">${counts[k]||0}</div><button data-k="${k}" data-d="1">+</button></div>`).join("")}<p><strong>Gesamt: <span id="personTotal">${U.sumCounts(counts)}</span> Personen</strong></p></div>`;
+}
+function regularPrice(){return Object.keys(cats).reduce((s,k)=>s+(counts[k]||0)*cats[k].price,0)}
+function familyEligible(){return (counts.adult||0)>=C.familyRule.minAdults && ((counts.child||0)+(counts.youth||0)+(counts.student||0))>=C.familyRule.minReducedPersons}
+function chosenPrice(){if(priceMode==="family")return C.prices.family;if(priceMode==="manual")return Number(manualPrice)||0;return regularPrice();}
+function priceHtml(){
+ const fam=familyEligible();
+ return `<div class="price-box"><div>Zu zahlender Eintritt</div><div id="priceTotal" class="price-total">${U.euro(chosenPrice())}</div><div id="priceHint">${priceMode==="family"?"Familientarif":priceMode==="manual"?"Manuell festgelegt":"Regulärer Tarif"}</div></div>
+ <div class="card"><div class="tariff-row"><button id="regularTariff" class="${priceMode==="auto"?"active-tariff":""}">Regulär ${U.euro(regularPrice())}</button><button id="familyTariff" class="${priceMode==="family"?"active-tariff":""}" ${fam?"":"disabled"}>Familientarif ${U.euro(C.prices.family)}</button></div>
+ <label>Eintritt manuell korrigieren<input id="manualPrice" type="number" min="0" step="0.50" inputmode="decimal" value="${priceMode==="manual"?manualPrice:""}" placeholder="Betrag in Euro"></label></div>`;
+}
+function bindCounters(){
+ document.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{const k=b.dataset.k;counts[k]=Math.max(0,(counts[k]||0)+Number(b.dataset.d));renderResult();});
+}
+function bindPrice(){
+ $("regularTariff").onclick=()=>{priceMode="auto";manualPrice=null;renderResult();};
+ $("familyTariff").onclick=()=>{priceMode="family";manualPrice=null;renderResult();};
+ $("manualPrice").oninput=e=>{if(e.target.value!==""){priceMode="manual";manualPrice=e.target.value;$("priceTotal").textContent=U.euro(chosenPrice());$("priceHint").textContent="Manuell festgelegt";}};
+}
+async function completeExisting(){
+ if(U.sumCounts(counts)<1){toast("Mindestens eine Person erforderlich.");return;}
+ let msg=`${current.number} mit ${U.sumCounts(counts)} Personen und ${U.euro(chosenPrice())} Eintritt einchecken?`;
+ if(current.status==="cancelled")msg="Stornierte Anmeldung als Ausnahme: "+msg;
+ if(current.status==="waitlist"&&earlierWait().length)msg=`Frühere Wartelistennummern sind noch offen. ${msg}`;
+ if(!(await confirmBox("Check-in bestätigen",msg,"Einchecken")))return;
+ data.checkins[current.token]={token:current.token,number:current.number,name:current.name,counts:U.clone(counts),paid:chosenPrice(),tariff:priceMode,kind:current.status==="confirmed"?"regular":current.status==="waitlist"?"waitlist":"exception",time:U.now()};
+ S.save(data);renderSuccess(data.checkins[current.token]);
+}
+function renderManual(){
+ counts={adult:0,child:0,youth:0,student:0};priceMode="auto";manualPrice=null;
+ $("manualContent").innerHTML=`<div class="card"><p class="muted">Für spontan erschienene Personen ohne Voranmeldung.</p></div>${counterHtml()}${priceHtml()}<button id="manualComplete" class="primary full">Spontanen Check-in abschließen</button>`;
+ bindCountersManual();bindPriceManual();$("manualComplete").onclick=completeManual;
+}
+function bindCountersManual(){document.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{const k=b.dataset.k;counts[k]=Math.max(0,(counts[k]||0)+Number(b.dataset.d));renderManual();});}
+function bindPriceManual(){
+ $("regularTariff").onclick=()=>{priceMode="auto";manualPrice=null;renderManual();};
+ $("familyTariff").onclick=()=>{priceMode="family";manualPrice=null;renderManual();};
+ $("manualPrice").oninput=e=>{if(e.target.value!==""){priceMode="manual";manualPrice=e.target.value;$("priceTotal").textContent=U.euro(chosenPrice());$("priceHint").textContent="Manuell festgelegt";}};
+}
+async function completeManual(){
+ if(U.sumCounts(counts)<1){toast("Mindestens eine Person erforderlich.");return;}
+ if(!(await confirmBox("Spontanen Check-in bestätigen",`${U.sumCounts(counts)} Personen mit ${U.euro(chosenPrice())} Eintritt erfassen?`,"Erfassen")))return;
+ const id=`M-${String(data.sequence++).padStart(3,"0")}`;
+ const x={id,name:"Spontaner Check-in",counts:U.clone(counts),paid:chosenPrice(),tariff:priceMode,time:U.now()};
+ data.manual.push(x);S.save(data);renderSuccess({...x,number:id,kind:"manual"});
+}
+function renderSuccess(x){
+ $("resultContent").innerHTML=`<div class="card success"><h2>Check-in erfolgreich</h2><p><strong>${U.esc(x.name)} · ${x.number}</strong></p><p>${U.sumCounts(x.counts)} Personen · Eintritt ${U.euro(x.paid)}</p></div>${actualHtml(x.counts)}${standHtml()}<button class="primary full" data-nav="scan">Nächsten QR-Code scannen</button><button class="secondary full" data-nav="overview">Gesamtübersicht öffnen</button>`;
+ $("resultContent").querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>nav(b.dataset.nav));
+ renderAll();
+}
+function actualHtml(c){return `<div class="card"><h3>Tatsächliche Personenzahl</h3><dl class="detail-grid">${Object.keys(cats).filter(k=>c[k]).map(k=>`<dt>${cats[k].label}</dt><dd>${c[k]}</dd>`).join("")}<dt>Gesamt</dt><dd>${U.sumCounts(c)}</dd></dl></div>`}
+function standHtml(){const s=stats();return `<div class="card"><h3>Aktueller Gesamtstand</h3><dl class="detail-grid"><dt>Regulär</dt><dd>${s.regular}</dd><dt>Warteliste</dt><dd>${s.wait}</dd><dt>Stornierte Ausnahmen</dt><dd>${s.exceptions}</dd><dt>Spontan</dt><dd>${s.manual}</dd><dt>Gesamt anwesend</dt><dd>${s.present} / ${C.event.maxPersons}</dd><dt>Sicher freie Plätze</dt><dd>${s.safe}</dd><dt>Eintritt</dt><dd>${U.euro(s.entry)}</dd><dt>Spenden</dt><dd>${U.euro(s.donations)}</dd></dl></div>`}
+function renderOverview(){
+ const s=stats();$("presentTop").textContent=s.present;
+ const checkRows=[...Object.values(data.checkins),...data.manual.map(x=>({...x,number:x.id,kind:"manual"}))];
+ $("overviewContent").innerHTML=`${standHtml()}<div class="card"><h3>Einnahmen</h3><dl class="detail-grid"><dt>Eintritt</dt><dd>${U.euro(s.entry)}</dd><dt>Spenden</dt><dd>${U.euro(s.donations)}</dd><dt>Gesamteinnahmen</dt><dd>${U.euro(s.total)}</dd></dl></div><div class="card"><h3>Erfasste Check-ins</h3>${checkRows.length?checkRows.map(x=>`<p><strong>${U.esc(x.number)}</strong> · ${U.sumCounts(x.counts)} Personen · ${U.euro(x.paid)}</p>`).join(""):'<p class="muted">Noch keine Check-ins.</p>'}</div>`;
+}
+async function donation(){
+ const amount=prompt("Spendenbetrag in Euro:", "5");
+ if(amount===null)return; const value=Number(String(amount).replace(",","."));
+ if(!Number.isFinite(value)||value<=0){toast("Bitte einen gültigen Betrag eingeben.");return;}
+ if(!(await confirmBox("Spende bestätigen",`Spende von ${U.euro(value)} erfassen?`,"Spende erfassen")))return;
+ data.donations.push({amount:value,time:U.now()});S.save(data);renderOverview();toast("Spende wurde erfasst.");
+}
+async function reset(){if(await confirmBox("Testdaten zurücksetzen","Alle lokalen Check-ins, Einnahmen und Spenden löschen?","Zurücksetzen")){data=S.reset();renderAll();toast("Testdaten zurückgesetzt.");}}
+function showMessage(title,text,tone,withOverview=false){
+ $("resultContent").innerHTML=`<div class="card ${tone||""}"><h2>${U.esc(title)}</h2><p>${U.esc(text)}</p></div>${withOverview?'<button class="secondary full" data-nav="overview">Übersicht öffnen</button>':''}`;
+ document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>nav(b.dataset.nav));
+}
+function confirmBox(title,body,confirmText){
+ $("modalTitle").textContent=title;$("modalBody").textContent=body;$("modalConfirm").textContent=confirmText;$("modal").classList.remove("hidden");
+ return new Promise(r=>modalResolve=r);
+}
+function closeModal(value){$("modal").classList.add("hidden");modalResolve?.(value);modalResolve=null;}
+function toast(t){$("toast").textContent=t;$("toast").classList.remove("hidden");setTimeout(()=>$("toast").classList.add("hidden"),2200);}
+document.addEventListener("DOMContentLoaded",init);
 })();
+
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{}));}
