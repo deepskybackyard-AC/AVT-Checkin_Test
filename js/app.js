@@ -14,6 +14,9 @@
     youth: { label: "Jugendliche / Schüler:innen", price: C.prices.youth },
     student: { label: "Studierende", price: C.prices.student }
   };
+  const correctionReasons = (C.correctionReasons || [])
+    .filter(reason => reason.active !== false)
+    .sort((left, right) => Number(left.order || 0) - Number(right.order || 0));
 
   let data = S.load();
   let current = null;
@@ -406,8 +409,20 @@
   }
 
   function familyEligible() {
-    const reduced = Number(counts.child || 0) + Number(counts.youth || 0) + Number(counts.student || 0);
-    return Number(counts.adult || 0) >= C.familyRule.minAdults && reduced >= C.familyRule.minReducedPersons;
+    const reducedPersons =
+      Number(counts.child || 0) +
+      Number(counts.youth || 0) +
+      Number(counts.student || 0);
+
+    const personRuleIsMet =
+      Number(counts.adult || 0) >= Number(C.familyRule.minAdults || 1) &&
+      reducedPersons >= Number(C.familyRule.minReducedPersons || 1);
+
+    const priceRuleIsMet =
+      C.familyRule.requireRegularPriceAboveFamilyPrice === false ||
+      regularPrice() > Number(C.prices.family || 0);
+
+    return personRuleIsMet && priceRuleIsMet;
   }
 
   function basePrice() {
@@ -422,79 +437,120 @@
     return hasCorrectedEntry() ? Math.max(0, Number(correctedEntry)) : basePrice();
   }
 
+  function selectedCorrectionReason() {
+    return correctionReasons.find(reason => reason.id === correctionReason) || null;
+  }
+
   function reasonLabel() {
-    if (correctionReason === "member") return "Vereinsmitglied";
-    if (correctionReason === "other") return "Sonstiges";
-    return "";
+    return selectedCorrectionReason()?.label || "";
+  }
+
+  function correctionReasonOptionsHtml() {
+    const options = [
+      `<option value="" ${correctionReason === "" ? "selected" : ""}>Kein Grund</option>`
+    ];
+
+    correctionReasons.forEach(reason => {
+      options.push(
+        `<option value="${U.esc(reason.id)}" ${correctionReason === reason.id ? "selected" : ""}>${U.esc(reason.label)}</option>`
+      );
+    });
+
+    return options.join("");
+  }
+
+  function priceHintText() {
+    if (hasCorrectedEntry()) {
+      return `Korrigierter Eintritt${reasonLabel() ? ` · ${reasonLabel()}` : ""}`;
+    }
+    return tariffMode === "family" ? "Familientarif" : "Regulärer Tarif";
   }
 
   function priceHtml() {
     const familyPossible = familyEligible();
-    const priceHint = hasCorrectedEntry()
-      ? `Korrigierter Eintritt${reasonLabel() ? ` · ${reasonLabel()}` : ""}`
-      : tariffMode === "family" ? "Familientarif" : "Regulärer Tarif";
 
-    return `<div class="price-box">
-      <div>Zu zahlender Eintritt</div>
-      <div class="price-total">${U.euro(chosenPrice())}</div>
-      <div>${U.esc(priceHint)}</div>
-    </div>
-    <div class="card">
-      <div class="tariff-row">
-        <button id="regularTariff" class="${tariffMode === "regular" ? "active-tariff" : ""}" type="button">Regulär ${U.euro(regularPrice())}</button>
-        <button id="familyTariff" class="${tariffMode === "family" ? "active-tariff" : ""}" type="button" ${familyPossible ? "" : "disabled"}>Familientarif ${U.euro(C.prices.family)}</button>
+    return `<div class="price-editor">
+      <div class="price-box">
+        <div>Zu zahlender Eintritt</div>
+        <div class="price-total" data-price-total>${U.euro(chosenPrice())}</div>
+        <div data-price-hint>${U.esc(priceHintText())}</div>
       </div>
-      <div class="correction-grid">
-        <label>Korrigierter Eintritt
-          <input id="correctedEntry" type="number" min="0" step="0.50" inputmode="decimal" value="${U.esc(correctedEntry)}" placeholder="Euro">
-        </label>
-        <label>Grund
-          <select id="correctionReason">
-            <option value="" ${correctionReason === "" ? "selected" : ""}>Bitte wählen</option>
-            <option value="member" ${correctionReason === "member" ? "selected" : ""}>Vereinsmitglied</option>
-            <option value="other" ${correctionReason === "other" ? "selected" : ""}>Sonstiges</option>
-          </select>
-        </label>
+      <div class="card">
+        <div class="tariff-row">
+          <button data-tariff="regular" class="${tariffMode === "regular" ? "active-tariff" : ""}" type="button">Regulär ${U.euro(regularPrice())}</button>
+          <button data-tariff="family" class="${tariffMode === "family" ? "active-tariff" : ""}" type="button" ${familyPossible ? "" : "disabled"}>Familientarif ${U.euro(C.prices.family)}</button>
+        </div>
+        <div class="correction-grid">
+          <label>Korrigierter Eintritt
+            <input data-corrected-entry type="number" min="0" step="0.50" inputmode="decimal" value="${U.esc(correctedEntry)}" placeholder="Euro">
+          </label>
+          <label>Grund
+            <select data-correction-reason>
+              ${correctionReasonOptionsHtml()}
+            </select>
+          </label>
+        </div>
+        <p class="compact-help">„Kein Grund“ hebt die Korrektur auf. Auch 0,00 € ist ein gültiger Betrag.</p>
       </div>
-      <p class="compact-help">Ein leeres Korrekturfeld stellt automatisch den ausgewählten Tarif wieder her.</p>
     </div>`;
   }
 
+  function visiblePriceEditor() {
+    return document.querySelector(".panel:not(.hidden) .price-editor");
+  }
+
   function bindPrice() {
-    $("regularTariff").onclick = () => {
+    const editor = visiblePriceEditor();
+    if (!editor) return;
+
+    editor.querySelector('[data-tariff="regular"]').onclick = () => {
       tariffMode = "regular";
       renderCurrentEditor();
     };
-    $("familyTariff").onclick = () => {
+
+    const familyButton = editor.querySelector('[data-tariff="family"]');
+    familyButton.onclick = () => {
+      if (!familyEligible()) return;
       tariffMode = "family";
       renderCurrentEditor();
     };
 
-    $("correctedEntry").addEventListener("input", event => {
+    const correctedInput = editor.querySelector("[data-corrected-entry]");
+    correctedInput.addEventListener("input", event => {
       correctedEntry = event.target.value;
-      updatePriceBoxOnly();
+      updateVisiblePriceEditor();
     });
 
-    $("correctionReason").addEventListener("change", event => {
+    const reasonSelect = editor.querySelector("[data-correction-reason]");
+    reasonSelect.addEventListener("change", event => {
       correctionReason = event.target.value;
-      if (correctionReason === "member") correctedEntry = "0";
-      if (correctionReason === "other") correctedEntry = "";
-      if (correctionReason === "") correctedEntry = "";
+      const reason = selectedCorrectionReason();
+
+      if (!reason) {
+        correctedEntry = "";
+      } else if (reason.defaultAmount !== null && reason.defaultAmount !== undefined) {
+        correctedEntry = String(reason.defaultAmount);
+      } else {
+        correctedEntry = "";
+      }
+
       renderCurrentEditor();
-      if (correctionReason === "other") setTimeout(() => $("correctedEntry")?.focus(), 20);
+
+      if (reason?.amountRequired && !hasCorrectedEntry()) {
+        setTimeout(() => visiblePriceEditor()?.querySelector("[data-corrected-entry]")?.focus(), 20);
+      }
     });
   }
 
-  function updatePriceBoxOnly() {
-    const total = document.querySelector(".price-total");
+  function updateVisiblePriceEditor() {
+    const editor = visiblePriceEditor();
+    if (!editor) return;
+
+    const total = editor.querySelector("[data-price-total]");
     if (total) total.textContent = U.euro(chosenPrice());
-    const priceBox = document.querySelector(".price-box");
-    if (priceBox) {
-      const hint = priceBox.lastElementChild;
-      if (hint) hint.textContent = hasCorrectedEntry()
-        ? `Korrigierter Eintritt${reasonLabel() ? ` · ${reasonLabel()}` : ""}`
-        : tariffMode === "family" ? "Familientarif" : "Regulärer Tarif";
-    }
+
+    const hint = editor.querySelector("[data-price-hint]");
+    if (hint) hint.textContent = priceHintText();
   }
 
   function renderCurrentEditor() {
@@ -503,14 +559,18 @@
   }
 
   function validateCorrection() {
-    if (hasCorrectedEntry() && !correctionReason) {
+    const reason = selectedCorrectionReason();
+
+    if (hasCorrectedEntry() && !reason) {
       toast("Bitte einen Grund für den korrigierten Eintritt auswählen.");
       return false;
     }
-    if (correctionReason === "other" && !hasCorrectedEntry()) {
-      toast("Bei „Sonstiges“ muss ein korrigierter Eintritt eingetragen werden.");
+
+    if (reason?.amountRequired && !hasCorrectedEntry()) {
+      toast(`Bei „${reason.label}“ muss ein korrigierter Eintritt eingetragen werden.`);
       return false;
     }
+
     return true;
   }
 

@@ -1,12 +1,14 @@
 # Changelog
 
-## 0.2.0-test.3
+## 0.2.0-test.4
 
-- Fünf Symboltasten in einer Reihe und orangefarbener Aktivzustand.
-- Verbessertes QR- und Suchsymbol.
-- Spendenbereich als eigene Hauptfunktion.
-- Eintrittskorrektur mit Betrag und Grund.
-- Korrekturfeld leert sich korrekt zurück auf den ausgewählten Tarif.
-- Kompakte Kategorienanzeige mit „+ alle“ und „- weniger“.
-- Suchliste mit den Filtern „Offen“, „Eingecheckt“ und „Alle“.
-- Neue V5-Test-QR-Codes.
+- Familientarifregel auf mindestens 1 Erwachsene:n, mindestens 1 ermäßigte
+  Familienperson und regulären Eintritt über 10 € korrigiert.
+- Kinder unter 6, Jugendliche/Schüler:innen und Studierende zählen als
+  ermäßigte Familienpersonen.
+- Sofortige Aktualisierung des sichtbaren zu zahlenden Betrags repariert.
+- Beim Leeren des Korrekturbetrags wird der Basistarif sofort wiederhergestellt.
+- „Kein Grund“ setzt Grund und Korrekturbetrag zurück.
+- 0,00 € wird als gültiger korrigierter Eintritt akzeptiert.
+- Korrekturgründe werden bereits aus einer konfigurierbaren Demoliste erzeugt.
+- Neue V6-Test-QR-Codes.

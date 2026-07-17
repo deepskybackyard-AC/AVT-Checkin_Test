@@ -1,31 +1,42 @@
-# AVT Check-in Demo 0.2.0-test.3
+# AVT Check-in Demo 0.2.0-test.4
 
 Lokale Ein-Gerät-Testversion vor dem Mehrgeräte-Test.
 
-## Neu in dieser Version
+## Korrigiert
 
-- Fünf Hauptfunktionen bleiben auch auf dem iPhone 12 mini in einer Reihe:
-  QR-Scan, Suche, spontaner Check-in, Spende und Übersicht.
-- Der aktive Hauptbereich wird orange hervorgehoben.
-- Deutliches QR-Code-Symbol und vergrößertes Suchsymbol.
-- Eigener Spendenbereich über die Hauptnavigation.
-- Korrekturbereich mit zwei Feldern nebeneinander:
-  „Korrigierter Eintritt“ und „Grund“.
-- Gründe: „Vereinsmitglied“ und „Sonstiges“.
-- „Vereinsmitglied“ setzt den Korrekturbetrag zunächst auf 0 €; anschließend kann der Betrag weiterhin angepasst werden.
-- Wird das Korrekturfeld geleert, gilt sofort wieder der reguläre Tarif oder Familientarif.
-- Bei bestehenden Anmeldungen sind zunächst nur Kategorien mit einer Personenzahl größer 0 sichtbar.
-- „+ alle“ blendet alle im Voranmeldeformular vorhandenen Kategorien ein.
-- „- weniger“ blendet Kategorien mit dem Wert 0 wieder aus.
-- Beim spontanen Check-in bleiben alle Kategorien sichtbar.
-- Die Suchansicht zeigt auch ohne Suchbegriff eine Anmeldeliste.
-- Filter „Offen“, „Eingecheckt“ und „Alle“; initial ist „Offen“ aktiv.
-- Neue V5-Test-QR-Codes.
+- Der sichtbare Betrag „Zu zahlender Eintritt“ wird bei jeder Eingabe im Feld
+  „Korrigierter Eintritt“ sofort aktualisiert.
+- Wird das Feld wieder vollständig geleert, erscheint sofort wieder der
+  reguläre Tarif oder der ausgewählte Familientarif.
+- Der Wert 0,00 € ist ein gültiger korrigierter Eintritt.
+- Die Auswahlliste „Grund“ kann über „Kein Grund“ wieder in den Ausgangszustand
+  zurückgesetzt werden. Dabei werden Grund und Korrekturbetrag entfernt.
+- Die Gründe stammen in dieser Demo bereits aus einer konfigurierbaren Liste.
+  Später wird diese Liste aus dem Google-Sheet geladen.
+
+## Familientarif
+
+Der Familientarif beträgt 10 € und ist nur aktiv, wenn:
+
+- mindestens 1 erwachsene Person vorhanden ist,
+- mindestens 1 Person aus Kinder unter 6, Jugendliche/Schüler:innen oder
+  Studierende vorhanden ist,
+- der reguläre Eintritt mehr als 10 € beträgt.
+
+Beispiele:
+
+- 1 Erwachsener + 1 Kind = 7 €: Familientarif nicht aktiv
+- 1 Erwachsener + 3 Kinder = 11 €: Familientarif aktiv
+- 1 Erwachsener + 1 Kind + 1 Schüler:in + 1 Studierende:r = 11 €:
+  Familientarif aktiv
+- Regulärer Eintritt genau 10 €: Familientarif nicht aktiv
 
 ## Testpasswort
 
 `avt-demo`
 
-## Wichtiger Hinweis
+## Hinweis
 
-Alle Daten werden weiterhin nur auf diesem einen Gerät gespeichert. Nach Bestätigung dieser Version wird das gemeinsame Backend für den Test mit zwei Geräten angepasst.
+Alle Daten werden weiterhin ausschließlich auf einem Gerät gespeichert.
+Die nächste Entwicklungsstufe ist nach Bestätigung dieser Version der Test
+mit zwei Geräten und einem gemeinsamen Apps-Script-Test-Backend.

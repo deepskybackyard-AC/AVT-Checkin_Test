@@ -1,23 +1,22 @@
 # Projektstatus – AVT Check-in
 
-Aktuelle Version: 0.2.0-test.3
+Aktuelle Version: 0.2.0-test.4
 
-Diese Version dient weiterhin dem Test auf einem einzelnen Gerät. Das Mehrgeräte-Backend ist bewusst noch nicht aktiv.
+Diese Version dient weiterhin dem Test auf einem einzelnen Gerät.
 
-## Festgelegte Bedienung
+## Festgelegte Regeln
 
-- Kategorien stammen ausschließlich aus dem Voranmeldeformular.
-- Keine separate Kategorie-Auswahlliste.
-- Bei bestehenden Anmeldungen zunächst nur belegte Kategorien.
-- Aufgeklappt: Schaltfläche „- weniger“.
-- Hauptnavigation mit fünf Symboltasten und orangefarbenem Aktivzustand.
-- Suche mit „Offen“, „Eingecheckt“ und „Alle“.
-- Eintrittskorrektur über Betrag und Grund.
-- Spenden als separate Einnahmeart.
+- Familientarif 10 €:
+  mindestens 1 Erwachsene:r, mindestens 1 Person aus Kinder unter 6,
+  Jugendliche/Schüler:innen oder Studierende und regulärer Eintritt über 10 €.
+- Gründe für korrigierten Eintritt werden später im Google-Sheet gepflegt.
+- Die Grundauswahl enthält immer „Kein Grund“.
+- 0,00 € ist ein gültiger Korrekturbetrag.
+- Ein leerer Korrekturbetrag verwendet wieder den ausgewählten Basistarif.
 
 ## Nächster Schritt
 
-Nach Bestätigung dieser Version:
-- gemeinsames Apps-Script-Test-Backend an das neue Datenmodell anpassen,
-- gemeinsamer Test mit zwei Geräten,
-- Doppel-Check-in und Live-Statistik prüfen.
+Nach Bestätigung:
+- gemeinsames Apps-Script-Test-Backend anpassen,
+- Test mit zwei Geräten,
+- gemeinsame Check-ins, Einnahmen und Spenden prüfen.

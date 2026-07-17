@@ -1,20 +1,17 @@
-# Technische Prüfung – AVT Check-in 0.2.0-test.3
+# Technische Prüfung – AVT Check-in 0.2.0-test.4
 
-Geprüft wurden:
+Erfolgreich geprüft wurden:
 
-- JavaScript-Syntax aller lokalen JavaScript-Dateien
-- vollständige ZIP-Struktur
-- fünf Hauptnavigationstasten in einer Reihe bei 375 × 812 CSS-Pixeln
-- orangefarbener Aktivzustand aller fünf Hauptbereiche
-- Suchliste ohne Suchbegriff
-- Filter „Offen“, „Eingecheckt“ und „Alle“
-- standardmäßig nur belegte Kategorien bei bestehenden Anmeldungen
-- Umschaltung „+ alle“ / „- weniger“
-- alle vier Kategorien beim spontanen Check-in
-- Eintrittskorrektur „Vereinsmitglied“ → zunächst 0 €
-- manuelle Änderung des korrigierten Eintritts
-- Rückkehr zum ursprünglichen Tarif nach Leeren des Korrekturfeldes
-- Spendenerfassung und Einnahmenübersicht
-- maschinelle Decodierung aller zehn V5-Test-QR-Codes
+- JavaScript-Syntax von `app.js` und `config.js`
+- Familientarif bei 1 Erwachsenem + 3 Kindern: aktiv
+- Familientarif bei 1 Erwachsenem + 1 Kind + 1 Schüler:in + 1 Studierende:r: aktiv
+- Familientarif bei 1 Erwachsenem + 1 Kind und regulär 7 €: deaktiviert
+- Familientarif bei regulär genau 10 €: deaktiviert
+- mindestens eine erwachsene und eine ermäßigte Person erforderlich
+- sichtbarer Preisbereich wird gezielt nur im aktuell geöffneten Bedienbereich aktualisiert
+- leeres Korrekturfeld fällt auf den regulären bzw. ausgewählten Familientarif zurück
+- 0,00 € wird technisch von einem leeren Korrekturfeld unterschieden und akzeptiert
+- „Kein Grund“ ist als Rücksetzoption vorhanden
+- ZIP-Archiv ist vollständig und ohne Prüffehler
 
-Der tatsächliche Kamerazugriff muss nach der Veröffentlichung weiterhin auf dem iPhone geprüft werden.
+Der tatsächliche Kamerazugriff und die Bedienung auf dem iPhone müssen nach der Veröffentlichung erneut praktisch getestet werden.
