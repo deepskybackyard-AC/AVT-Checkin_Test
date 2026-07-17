@@ -10,14 +10,18 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/favicon-32.png">
-<link rel="stylesheet" href="styles.css?v=0.2.0-test.2">
+<link rel="stylesheet" href="styles.css?v=0.2.0-test.3">
 </head>
 <body>
 <div class="app-shell">
 <header class="topbar">
-  <div class="brand"><img src="icons/icon-192.png" alt=""><div><strong>AVT Check-in <span class="pill">DEMO</span></strong><small>Version 0.2.0-test.2</small></div></div>
-  <button id="refreshBtn" class="head-btn hidden" type="button" aria-label="Statistik aktualisieren">⟳</button>
+  <div class="brand">
+    <img src="icons/icon-192.png" alt="">
+    <div><strong>AVT Check-in <span class="pill">DEMO</span></strong><small>Version 0.2.0-test.3</small></div>
+  </div>
+  <button id="refreshBtn" class="head-btn hidden" type="button" aria-label="Statistik aktualisieren" title="Statistik aktualisieren">⟳</button>
 </header>
+
 <main>
 <section id="loginView" class="view narrow">
   <div class="card">
@@ -46,24 +50,38 @@
   </section>
 
   <nav class="action-row" aria-label="Hauptfunktionen">
-    <button class="nav-icon primary" data-nav="scan" aria-label="QR-Code scannen" title="QR-Code scannen"><span class="qr-symbol"></span></button>
-    <button class="nav-icon" data-nav="search" aria-label="Anmeldung suchen" title="Anmeldung suchen">⌕</button>
-    <button class="nav-icon" data-nav="manual" aria-label="Spontan einchecken" title="Spontan einchecken">♙+</button>
-    <button class="nav-icon" data-nav="overview" aria-label="Übersicht" title="Übersicht">Σ</button>
+    <button class="nav-icon" data-nav="scan" aria-label="QR-Code scannen" title="QR-Code scannen"><svg class="nav-svg qr-nav-svg" viewBox="0 0 32 32" aria-hidden="true">
+  <rect x="2" y="2" width="9" height="9" rx="1"></rect><rect x="5" y="5" width="3" height="3" class="svg-fill"></rect>
+  <rect x="21" y="2" width="9" height="9" rx="1"></rect><rect x="24" y="5" width="3" height="3" class="svg-fill"></rect>
+  <rect x="2" y="21" width="9" height="9" rx="1"></rect><rect x="5" y="24" width="3" height="3" class="svg-fill"></rect>
+  <path d="M15 3h3v3h-3zm0 6h3v3h-3zm0 6h3v3h-3zm6 0h3v3h-3zm6 0h3v3h-3zm-12 6h3v3h-3zm6 0h3v3h-3zm6 0h3v3h-3zm-12 6h3v3h-3zm6 0h9v3h-9z" class="svg-fill no-stroke"></path>
+</svg></button>
+    <button class="nav-icon" data-nav="search" aria-label="Anmeldung suchen" title="Anmeldung suchen"><svg class="nav-svg search-nav-svg" viewBox="0 0 32 32" aria-hidden="true">
+  <circle cx="14" cy="14" r="8"></circle><path d="M20 20l8 8"></path>
+</svg></button>
+    <button class="nav-icon" data-nav="manual" aria-label="Spontan einchecken" title="Spontan einchecken"><svg class="nav-svg" viewBox="0 0 32 32" aria-hidden="true">
+  <circle cx="11" cy="9" r="4"></circle><path d="M3 25c0-5 3-8 8-8s8 3 8 8"></path>
+  <path d="M25 13v12M19 19h12"></path>
+</svg></button>
+    <button class="nav-icon donation-nav-symbol" data-nav="donation" aria-label="Spende erfassen" title="Spende erfassen">€+</button>
+    <button class="nav-icon overview-nav-symbol" data-nav="overview" aria-label="Übersicht" title="Übersicht">Σ</button>
   </nav>
 
   <section id="homePanel" class="panel">
     <div id="summary" class="summary-grid"></div>
-    <div class="card">
-      <a class="button secondary full" href="test-qr-codes/" target="_blank">Test-QR-Codes öffnen</a>
-    </div>
+    <div class="card"><a class="button secondary full" href="test-qr-codes/" target="_blank">Test-QR-Codes öffnen</a></div>
     <details class="card"><summary>Testszenarien ohne QR-Code</summary><div id="scenarios" class="scenario-list"></div></details>
   </section>
 
   <section id="scanPanel" class="panel hidden">
     <div class="panel-head"><button data-nav="home">‹ Zurück</button><h2>QR-Code scannen</h2></div>
     <div class="card scanner-card">
-      <button id="cameraPlaceholder" class="camera-placeholder" type="button"><span class="qr-big"></span><strong>Kamera starten</strong></button>
+      <button id="cameraPlaceholder" class="camera-placeholder" type="button"><svg class="nav-svg qr-nav-svg" viewBox="0 0 32 32" aria-hidden="true">
+  <rect x="2" y="2" width="9" height="9" rx="1"></rect><rect x="5" y="5" width="3" height="3" class="svg-fill"></rect>
+  <rect x="21" y="2" width="9" height="9" rx="1"></rect><rect x="24" y="5" width="3" height="3" class="svg-fill"></rect>
+  <rect x="2" y="21" width="9" height="9" rx="1"></rect><rect x="5" y="24" width="3" height="3" class="svg-fill"></rect>
+  <path d="M15 3h3v3h-3zm0 6h3v3h-3zm0 6h3v3h-3zm6 0h3v3h-3zm6 0h3v3h-3zm-12 6h3v3h-3zm6 0h3v3h-3zm6 0h3v3h-3zm-12 6h3v3h-3zm6 0h9v3h-9z" class="svg-fill no-stroke"></path>
+</svg><strong>Kamera starten</strong></button>
       <video id="cameraVideo" class="hidden" playsinline muted></video>
       <canvas id="cameraCanvas" class="hidden"></canvas>
       <div id="scanLine" class="scan-line hidden"></div>
@@ -76,12 +94,31 @@
 
   <section id="searchPanel" class="panel hidden">
     <div class="panel-head"><button data-nav="home">‹ Zurück</button><h2>Anmeldung suchen</h2></div>
-    <div class="card"><label>Anmeldenummer oder Name<input id="searchInput" type="search" placeholder="A-02 oder Muster"></label><div id="searchResults"></div></div>
+    <div class="card search-card">
+      <label>Anmeldenummer oder Name<input id="searchInput" type="search" placeholder="A-02 oder Muster"></label>
+      <div class="search-filter-row" role="group" aria-label="Listenfilter">
+        <button class="search-filter active" data-search-filter="open" type="button">Offen</button>
+        <button class="search-filter" data-search-filter="checked" type="button">Eingecheckt</button>
+        <button class="search-filter" data-search-filter="all" type="button">Alle</button>
+      </div>
+      <div id="searchResults" class="registration-list"></div>
+    </div>
   </section>
 
   <section id="manualPanel" class="panel hidden">
     <div class="panel-head"><button data-nav="home">‹ Zurück</button><h2>Spontaner Check-in</h2></div>
     <div id="manualContent"></div>
+  </section>
+
+  <section id="donationPanel" class="panel hidden">
+    <div class="panel-head"><button data-nav="home">‹ Zurück</button><h2>Spende erfassen</h2></div>
+    <div class="card">
+      <label>Spendenbetrag
+        <input id="donationAmount" type="number" min="0" step="0.50" inputmode="decimal" placeholder="Betrag in Euro">
+      </label>
+      <button id="saveDonationBtn" class="primary full" type="button">Spende bestätigen</button>
+    </div>
+    <div id="donationSummary"></div>
   </section>
 
   <section id="resultPanel" class="panel hidden">
@@ -92,18 +129,29 @@
   <section id="overviewPanel" class="panel hidden">
     <div class="panel-head"><button data-nav="home">‹ Zurück</button><h2>Übersicht</h2></div>
     <div id="overviewContent"></div>
-    <button id="donationBtn" class="primary full">Spende erfassen</button>
     <button id="resetBtn" class="secondary full">Testdaten zurücksetzen</button>
     <button id="logoutBtn" class="secondary full">Abmelden</button>
   </section>
 </section>
 </main>
+
 <div id="toast" class="toast hidden"></div>
-<div id="modal" class="modal-backdrop hidden"><div class="modal"><h2 id="modalTitle"></h2><div id="modalBody"></div><div class="modal-actions"><button id="modalCancel" class="secondary">Abbrechen</button><button id="modalConfirm" class="primary">Bestätigen</button></div></div></div>
+<div id="modal" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2 id="modalTitle"></h2>
+    <div id="modalBody"></div>
+    <div class="modal-actions">
+      <button id="modalCancel" class="secondary">Abbrechen</button>
+      <button id="modalConfirm" class="primary">Bestätigen</button>
+    </div>
+  </div>
 </div>
+</div>
+
 <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="js/config.js?v=0.2.0-test.2"></script>
-<script src="js/storage.js?v=0.2.0-test.2"></script>
-<script src="js/scanner.js?v=0.2.0-test.2"></script>
-<script src="js/app.js?v=0.2.0-test.2"></script>
-</body></html>
+<script src="js/config.js?v=0.2.0-test.3"></script>
+<script src="js/storage.js?v=0.2.0-test.3"></script>
+<script src="js/scanner.js?v=0.2.0-test.3"></script>
+<script src="js/app.js?v=0.2.0-test.3"></script>
+</body>
+</html>

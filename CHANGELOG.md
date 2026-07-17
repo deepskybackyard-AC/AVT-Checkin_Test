@@ -1,20 +1,12 @@
 # Changelog
 
-## 0.2.0-test.2
+## 0.2.0-test.3
 
-
-- Kategorien exakt wie in der Voranmeldung:
-  - Erwachsene: 5 €
-  - Kinder unter 6 Jahren: 2 €
-  - Jugendliche / Schüler:innen: 2 €
-  - Studierende: 2 €
-- Familienkategorie und Familien-Default entfallen.
-- Familientarif: 10 € bei mindestens zwei Erwachsenen und mindestens einer ermäßigten Person.
-- Regulärer Preis und Familientarif sind manuell auswählbar.
-- Eintrittsbetrag kann zusätzlich manuell korrigiert werden.
-- Eigener spontaner Check-in ohne Voranmeldung.
-- Vier reine Symboltasten in einer Zeile, auch für iPhone 12 mini.
-- Spenden können separat erfasst werden.
-- Übersicht mit Eintritt, Spenden und Gesamteinnahmen.
-- Neue V4-Test-QR-Codes.
-
+- Fünf Symboltasten in einer Reihe und orangefarbener Aktivzustand.
+- Verbessertes QR- und Suchsymbol.
+- Spendenbereich als eigene Hauptfunktion.
+- Eintrittskorrektur mit Betrag und Grund.
+- Korrekturfeld leert sich korrekt zurück auf den ausgewählten Tarif.
+- Kompakte Kategorienanzeige mit „+ alle“ und „- weniger“.
+- Suchliste mit den Filtern „Offen“, „Eingecheckt“ und „Alle“.
+- Neue V5-Test-QR-Codes.

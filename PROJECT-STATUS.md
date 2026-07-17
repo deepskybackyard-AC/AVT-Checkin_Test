@@ -1,10 +1,23 @@
-# Projektstatus
+# Projektstatus – AVT Check-in
 
-Aktuelle Version: 0.2.0-test.2
+Aktuelle Version: 0.2.0-test.3
 
-Diese Version dient ausschließlich der Bedienungs- und Tarifprüfung auf einem Gerät. Das Mehrgeräte-Backend ist bewusst noch nicht aktiv.
+Diese Version dient weiterhin dem Test auf einem einzelnen Gerät. Das Mehrgeräte-Backend ist bewusst noch nicht aktiv.
 
-Nächster Schritt nach Bestätigung:
-- Anpassung des gemeinsamen Apps-Script-Test-Backends
-- gemeinsamer Test mit zwei Geräten
-- serverseitige Einnahmen-, Spenden- und Check-in-Daten
+## Festgelegte Bedienung
+
+- Kategorien stammen ausschließlich aus dem Voranmeldeformular.
+- Keine separate Kategorie-Auswahlliste.
+- Bei bestehenden Anmeldungen zunächst nur belegte Kategorien.
+- Aufgeklappt: Schaltfläche „- weniger“.
+- Hauptnavigation mit fünf Symboltasten und orangefarbenem Aktivzustand.
+- Suche mit „Offen“, „Eingecheckt“ und „Alle“.
+- Eintrittskorrektur über Betrag und Grund.
+- Spenden als separate Einnahmeart.
+
+## Nächster Schritt
+
+Nach Bestätigung dieser Version:
+- gemeinsames Apps-Script-Test-Backend an das neue Datenmodell anpassen,
+- gemeinsamer Test mit zwei Geräten,
+- Doppel-Check-in und Live-Statistik prüfen.
