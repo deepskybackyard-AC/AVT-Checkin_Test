@@ -1,10 +1,11 @@
 # Changelog
 
-## 0.2.0-test.6
+## 0.2.0-test.7
 
-- Initialisierung der sicheren freien Plätze repariert.
-- Preisfeld und Abschlussbutton nebeneinander.
-- Offene reguläre und offene Wartelistenpersonen in der Gesamtübersicht.
-- Wartelistenprüfung auf Ebene einzelner W-IDs.
-- Vollständige Demo-Warteliste W-001 bis W-007.
-- Neue V8-Test-QR-Codes.
+- AVT-Logo in der Kopfzeile eingebunden.
+- Preislabel auf „Zu zahlen“ verkürzt.
+- Erfolgsansicht kompakter gestaltet.
+- Button „Nächsten QR-Code scannen“ direkt unter dem grünen Erfolgsbereich.
+- Kein Button „Gesamtübersicht öffnen“ mehr.
+- Erfolgsdetails jetzt über Button „Details“.
+- Begriffe „Unangemeldet“, „Offen – regulär“, „Offen – Warteliste“.

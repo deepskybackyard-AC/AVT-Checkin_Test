@@ -1,27 +1,19 @@
-# AVT Check-in Demo 0.2.0-test.6
+# AVT Check-in Demo 0.2.0-test.7
 
-Letzte geplante lokale Ein-Gerät-Testversion vor dem Test mit zwei Geräten.
+Lokale Ein-Gerät-Testversion unmittelbar vor dem Mehrgeräte-Test.
 
-## Neu und korrigiert
+## Neu und optimiert
 
-- „Sicher freie Plätze“ wird unmittelbar nach Login und App-Start korrekt angezeigt.
-- Der dunkelblaue Bereich „Zu zahlender Eintritt“ nutzt ungefähr die halbe Breite.
-- Rechts daneben steht auf gleicher Höhe der Button „Check-in abschließen“.
-- Die Übersicht enthält zusätzlich:
-  - Regulär (noch nicht eingecheckt)
-  - Warteliste (noch nicht eingecheckt)
-- Die Demo enthält jetzt eine vollständige Wartelistenfolge W-001 bis W-007.
-- Die Wartelistenreihenfolge wird anhand jeder einzelnen Personen-ID geprüft.
-- Beim Check-in von W-006 wird gewarnt, solange niedrigere W-IDs offen sind.
-- Der Wartelisten-Check-in bleibt nach zusätzlicher Bestätigung trotzdem möglich.
-- Neue V8-Test-QR-Codes.
-
-## Empfohlener Wartelistentest
-
-1. W-001/W-002 einchecken.
-2. W-006/W-007 scannen.
-3. Die App muss weiterhin auf die offenen IDs W-003, W-004 und W-005 hinweisen.
-4. Der Check-in muss nach ausdrücklicher Bestätigung trotzdem möglich bleiben.
+- Das AVT-Logo ersetzt jetzt das bisherige Platzhalter-Logo links oben.
+- Im Preisbereich steht jetzt kompakt **„Zu zahlen“** statt „Zu zahlender Eintritt“.
+- Nach einem erfolgreichen Check-in erscheint direkt unter dem grünen Bereich der Button **„Nächsten QR-Code scannen“**.
+- Der bisherige Button **„Gesamtübersicht öffnen“** entfällt vollständig.
+- Der grüne Erfolgsbereich ist stark verkleinert und zeigt nur noch **„Check-in erfolgreich“** sowie den Button **„Details“**.
+- Über **„Details“** werden Name, alle IDs, Personenzahlen je Kategorie und der gezahlte Betrag angezeigt.
+- Unterhalb des nächsten Scan-Buttons bleibt direkt die vollständige Rubrik **„Aktueller Gesamtstand“** sichtbar.
+- In der Gesamtübersicht wurde **„Spontan“** in **„Unangemeldet“** umbenannt.
+- **„Regulär (noch nicht eingecheckt)“** heißt jetzt **„Offen – regulär“**.
+- **„Warteliste (noch nicht eingecheckt)“** heißt jetzt **„Offen – Warteliste“**.
 
 ## Testpasswort
 

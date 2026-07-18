@@ -539,7 +539,7 @@
   function priceHtml(actionButtonHtml = "") {
     const familyPossible = familyEligible();
     const priceSummary = `<div class="price-box">
-      <div>Zu zahlender Eintritt</div>
+      <div><span class="price-label-short">Zu zahlen</span><span class="price-label-long">Zu zahlender Eintritt</span></div>
       <div class="price-total" data-price-total>${U.euro(chosenPrice())}</div>
       <div data-price-hint>${U.esc(priceHintText())}</div>
     </div>`;
@@ -722,21 +722,77 @@
     panels.forEach(panel => $(panel).classList.add("hidden"));
     $("resultPanel").classList.remove("hidden");
 
+    const detailPayload = {
+      name: checkin.name,
+      number: checkin.number,
+      ids: current?.ids || [checkin.number],
+      counts: checkin.counts,
+      paid: checkin.paid,
+      correctionReason: checkin.correctionReason || "",
+      tariff: checkin.tariff || "regular"
+    };
+
     $("resultContent").innerHTML = `
-      <div class="card success">
-        <h2>Check-in erfolgreich</h2>
-        <p><strong>${U.esc(checkin.name)} · ${checkin.number}</strong></p>
-        <p>${U.sumCounts(checkin.counts)} Personen · Eintritt ${U.euro(checkin.paid)}</p>
+      <div class="card success success-compact">
+        <div class="success-head">
+          <h2>Check-in erfolgreich</h2>
+          <button id="successDetailsBtn" class="secondary success-detail-button" type="button">Details</button>
+        </div>
       </div>
-      ${actualPersonsHtml(checkin.counts)}
-      ${currentStandHtml()}
-      <button class="primary full" data-nav="scan">Nächsten QR-Code scannen</button>
-      <button class="secondary full" data-nav="overview">Gesamtübersicht öffnen</button>`;
+      <button class="primary full summary-follow-button" data-nav="scan">Nächsten QR-Code scannen</button>
+      ${currentStandHtml()}`;
 
     $("resultContent").querySelectorAll("[data-nav]").forEach(button => {
       button.onclick = () => nav(button.dataset.nav);
     });
+
+    $("successDetailsBtn").onclick = () => showSuccessDetails(detailPayload);
+
     renderAll();
+    updateHeaderStats();
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
+
+  function showSuccessDetails(detailPayload) {
+    const ids = detailPayload.ids || [detailPayload.number];
+    const tariffLabel =
+      detailPayload.tariff === "family"
+        ? "Familientarif"
+        : "Regulärer Tarif";
+
+    const correctionLine = detailPayload.correctionReason
+      ? `<p><strong>Korrekturgrund:</strong> ${U.esc(reasonLabelFromId(detailPayload.correctionReason) || detailPayload.correctionReason)}</p>`
+      : "";
+
+    $("modalTitle").textContent = "Details zum Check-in";
+    $("modalBody").innerHTML = `
+      <p><strong>${U.esc(detailPayload.name)}</strong></p>
+      <p><strong>IDs:</strong> ${ids.map(id => U.esc(id)).join(", ")}</p>
+      <div class="ids-list">${ids.map(id => `<span>${U.esc(id)}</span>`).join("")}</div>
+      <div class="card" style="margin:12px 0 0 0;padding:12px;">
+        <h3 style="margin:0 0 8px 0;">Personenzahl</h3>
+        <dl class="detail-grid">
+          ${Object.keys(categories).filter(key => detailPayload.counts[key]).map(key => `<dt>${categories[key].label}</dt><dd>${detailPayload.counts[key]}</dd>`).join("")}
+          <dt>Gesamt</dt><dd>${U.sumCounts(detailPayload.counts)}</dd>
+        </dl>
+      </div>
+      <div class="card" style="margin:12px 0 0 0;padding:12px;">
+        <h3 style="margin:0 0 8px 0;">Eintritt</h3>
+        <p><strong>Tarif:</strong> ${U.esc(tariffLabel)}</p>
+        <p><strong>Gezahlt:</strong> ${U.euro(detailPayload.paid)}</p>
+        ${correctionLine}
+      </div>`;
+    $("modalTitle").textContent = "Details zum Check-in";
+    $("modalConfirm").textContent = "Schließen";
+    $("modalCancel").classList.add("hidden");
+    $("modal").classList.remove("hidden");
+    modalResolve = () => {
+      $("modalCancel").classList.remove("hidden");
+    };
+  }
+
+  function reasonLabelFromId(reasonId) {
+    return correctionReasons.find(reason => reason.id === reasonId)?.label || "";
   }
 
   function actualPersonsHtml(personCounts) {
@@ -757,13 +813,13 @@
         <dt>Regulär</dt><dd>${currentStats.regular}</dd>
         <dt>Warteliste</dt><dd>${currentStats.wait}</dd>
         <dt>Stornierte Ausnahmen</dt><dd>${currentStats.exceptions}</dd>
-        <dt>Spontan</dt><dd>${currentStats.manual}</dd>
+        <dt>Unangemeldet</dt><dd>${currentStats.manual}</dd>
         <dt>Gesamt anwesend</dt><dd>${currentStats.present} / ${C.event.maxPersons}</dd>
         <dt>Sicher freie Plätze</dt><dd>${currentStats.safe}</dd>
         <dt>Eintritt</dt><dd>${U.euro(currentStats.entry)}</dd>
         <dt>Spenden</dt><dd>${U.euro(currentStats.donations)}</dd>
-        <dt>Regulär (noch nicht eingecheckt)</dt><dd>${currentStats.regularOpen}</dd>
-        <dt>Warteliste (noch nicht eingecheckt)</dt><dd>${currentStats.waitOpen}</dd>
+        <dt>Offen – regulär</dt><dd>${currentStats.regularOpen}</dd>
+        <dt>Offen – Warteliste</dt><dd>${currentStats.waitOpen}</dd>
       </dl>
     </div>`;
   }

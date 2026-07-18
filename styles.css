@@ -128,3 +128,51 @@ button:disabled{opacity:.45}
   .price-action-row .price-total{font-size:1.5rem}
   .price-action-row .checkin-side-button{padding:10px 7px;font-size:.94rem}
 }
+
+
+/* Ergänzungen 0.2.0-test.7 */
+.brand img{
+  width:30px;
+  height:30px;
+  object-fit:contain;
+  background:transparent;
+}
+.success-compact{
+  padding:12px 14px;
+}
+.success-compact .success-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:6px;
+}
+.success-compact .success-head h2{
+  margin:0;
+  font-size:1.02rem;
+  line-height:1.2;
+}
+.success-detail-button{
+  padding:7px 10px;
+  border-radius:10px;
+  font-size:.86rem;
+  white-space:nowrap;
+}
+.success-compact .success-summary{
+  margin:0;
+  color:#33424f;
+}
+.price-action-row .price-box .price-label-short{
+  display:block;
+}
+.price-action-row .price-box .price-label-long{
+  display:none;
+}
+.summary-follow-button{
+  margin:10px 0 12px;
+}
+@media(max-width:370px){
+  .brand img{width:27px;height:27px}
+  .success-compact .success-head h2{font-size:.96rem}
+  .success-detail-button{font-size:.8rem;padding:6px 8px}
+}

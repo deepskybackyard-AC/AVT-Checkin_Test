@@ -1,14 +1,16 @@
 # Projektstatus – AVT Check-in
 
-Aktuelle Version: 0.2.0-test.6
+Aktuelle Version: 0.2.0-test.7
 
-Diese Version schließt die lokale Ein-Gerät-Testphase voraussichtlich ab.
+Diese Version optimiert die letzte Ein-Gerät-Testphase weiter:
 
-## Nächster Schritt
+- kompaktere Erfolgsansicht,
+- schnellerer Zugriff auf den nächsten QR-Scan,
+- AVT-Logo in der App,
+- komprimierte Statistikbezeichnungen.
 
-Nach Bestätigung dieser Version:
+Nächster Schritt nach Bestätigung:
 - gemeinsames Apps-Script-Test-Backend,
 - Test mit zwei oder mehr Geräten,
 - serverseitiger Schutz gegen Doppel-Check-ins,
-- gemeinsame Statistik, Einnahmen und Spenden,
-- gemeinsame Wartelistenreihenfolge.
+- gemeinsame Statistik, Einnahmen und Spenden.
