@@ -1,19 +1,29 @@
-# AVT Check-in Multi-Device 0.3.0-test.2
+# AVT Check-in Multi-Device 0.3.0-test.3
 
-Korrekturversion des ersten Mehrgeräte-Tests.
+Korrektur der automatischen Mehrgeräte-Aktualisierung.
 
-## Behobener Fehler
+## Behoben
 
-In `0.3.0-test.1` löschte das Apps-Script-Backend bei jedem Abruf des
-gemeinsamen Status versehentlich die Tabelleninhalte. Dadurch war die
-Backend-Verbindung zwar online, die Liste der Testanmeldungen war aber leer.
-Ein korrekt erkannter Test-QR-Code wurde deshalb als unbekannt gemeldet.
+- Die automatische Aktualisierung verwendet keinen einfachen `setInterval`
+  mehr, sondern einen nicht überlappenden, selbst neu geplanten Abruf.
+- Der gemeinsame Stand wird weiterhin alle 15 Sekunden vom Backend geladen.
+- Zusätzlich wird sofort aktualisiert, wenn die App wieder sichtbar wird,
+  das Browserfenster den Fokus erhält, die Seite wiederhergestellt wird oder
+  die Internetverbindung zurückkehrt.
+- Im grünen Backendstatus wird die Uhrzeit der letzten erfolgreichen
+  Synchronisierung angezeigt.
+- Während einer automatischen Aktualisierung bleibt ein bereits eingetragener
+  Spendenbetrag im Eingabefeld erhalten.
+- Spenden werden jetzt ebenfalls über das gemeinsame Backend gespeichert.
+- Der QR-Import aus einer Bilddatei wurde vollständig korrigiert.
+- Wird eine gerade geöffnete Anmeldung auf dem anderen Gerät eingecheckt,
+  zeigt dieses Gerät nach der nächsten Aktualisierung den Hinweis
+  „Bereits eingecheckt“.
 
-In dieser Version:
+## Backend
 
-- werden Tabellen beim Statusabruf nicht mehr gelöscht,
-- werden Testanmeldungen nach `setupTestBackend()` dauerhaft erhalten,
-- bleiben Check-ins und Spenden bei Aktualisierungen erhalten,
-- funktioniert zusätzlich die Auswahl eines QR-Codes aus einer Bilddatei.
+Das Apps-Script-Backend `0.3.0-test.2` bleibt kompatibel und muss für diese
+Frontendkorrektur nicht erneut bereitgestellt werden.
 
-Die vorhandenen Test-QR-Codes bleiben gültig.
+In `js/config.js` muss lediglich wieder die bereits funktionierende `/exec`-URL
+eingetragen und `enabled: true` gesetzt werden.

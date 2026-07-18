@@ -31,6 +31,8 @@
   let backendReady = false;
   let onlineState = "local";
   let pollTimer = null;
+  let refreshPromise = null;
+  let lastSyncAt = null;
 
   function init() {
     // Die Veranstaltungsdetails werden seit test.9 nur noch im Info-Dialog
@@ -64,13 +66,38 @@
     $("imageInput").addEventListener("change", async event => {
       try {
         const result = await SC.decodeImageFile(event.target.files?.[0]);
-        handlePayload(result.data);
+        handlePayload(result);
       } catch (error) {
         toast(error.message || "QR-Code nicht erkannt.");
       }
     });
     $("modalCancel").addEventListener("click", () => closeModal(false));
     $("modalConfirm").addEventListener("click", () => closeModal(true));
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden && S.getLogin()) {
+        refreshSharedState({ quiet: true, reason: "sichtbar" });
+        restartPolling();
+      }
+    });
+    window.addEventListener("pageshow", () => {
+      if (S.getLogin()) {
+        refreshSharedState({ quiet: true, reason: "pageshow" });
+        restartPolling();
+      }
+    });
+    window.addEventListener("focus", () => {
+      if (S.getLogin()) {
+        refreshSharedState({ quiet: true, reason: "focus" });
+        restartPolling();
+      }
+    });
+    window.addEventListener("online", () => {
+      if (S.getLogin()) {
+        refreshSharedState({ quiet: true, reason: "online" });
+        restartPolling();
+      }
+    });
 
     if (S.getLogin()) showMain();
     else showLogin();
@@ -114,12 +141,64 @@
     }
   }
 
+  function syncTimeLabel() {
+    if (!lastSyncAt) return "";
+    return new Intl.DateTimeFormat("de-DE", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    }).format(lastSyncAt);
+  }
+
+  function showOnlineStatus(text = "Online · gemeinsamer Test") {
+    const time = syncTimeLabel();
+    const queue = AVT_BACKEND.queueCount();
+    setBackendStatus(
+      "online",
+      `${text}${time ? ` · ${time}` : ""} · ${queue} ausstehend`
+    );
+  }
+
+  function renderSharedState() {
+    renderAll();
+
+    if (!$("searchPanel").classList.contains("hidden")) {
+      renderSearch();
+    }
+    if (!$("donationPanel").classList.contains("hidden")) {
+      renderDonationPanel(true);
+    }
+    if (!$("overviewPanel").classList.contains("hidden")) {
+      renderOverview();
+    }
+
+    const currentStand = $("currentStandCard");
+    if (currentStand) {
+      currentStand.outerHTML = currentStandHtml();
+    }
+
+    if (
+      !$("resultPanel").classList.contains("hidden") &&
+      current?.token &&
+      data.checkins[current.token] &&
+      !$("successDetailsBtn")
+    ) {
+      const existing = data.checkins[current.token];
+      showMessage(
+        "Bereits eingecheckt",
+        `${current.number} wurde inzwischen auf einem anderen Gerät mit ${U.sumCounts(existing.counts)} Personen eingecheckt.`,
+        "warning",
+        true
+      );
+    }
+  }
+
   async function initializeBackend() {
     if (!window.AVT_BACKEND?.isConfigured()) {
       backendReady = false;
       setBackendStatus("local", "Lokaler Modus · Backend noch nicht konfiguriert");
       applySnapshot(window.AVT_BACKEND?.loadCached?.());
-      renderAll();
+      renderSharedState();
       return;
     }
 
@@ -128,55 +207,93 @@
       applySnapshot(snapshot);
       backendReady = true;
       onlineState = "online";
-      setBackendStatus("online", `Online · gemeinsamer Test · ${AVT_BACKEND.queueCount()} ausstehend`);
-      startPolling();
-      if (AVT_BACKEND.queueCount()) await syncOfflineQueue();
-      renderAll();
+      lastSyncAt = new Date();
+      showOnlineStatus();
+      if (AVT_BACKEND.queueCount()) await syncOfflineQueue({ quiet: true });
+      renderSharedState();
+      restartPolling();
     } catch (error) {
       backendReady = false;
       onlineState = "offline";
       const cached = AVT_BACKEND.loadCached();
       if (cached) applySnapshot(cached);
       setBackendStatus("offline", `Offline · lokaler Stand · ${AVT_BACKEND.queueCount()} ausstehend`);
-      renderAll();
+      renderSharedState();
+      restartPolling();
     }
   }
 
-  function startPolling() {
-    if (pollTimer) window.clearInterval(pollTimer);
-    const seconds = Math.max(5, Number(C.backend?.pollSeconds || 15));
-    pollTimer = window.setInterval(async () => {
-      if (!$("mainView")?.classList.contains("hidden")) {
-        await refreshSharedState({ quiet: true });
+  function pollingDelayMs() {
+    return Math.max(5, Number(C.backend?.pollSeconds || 15)) * 1000;
+  }
+
+  function scheduleNextPoll(delay = pollingDelayMs()) {
+    if (pollTimer) window.clearTimeout(pollTimer);
+    pollTimer = window.setTimeout(async () => {
+      pollTimer = null;
+      await runPollCycle();
+    }, delay);
+  }
+
+  function restartPolling() {
+    scheduleNextPoll(pollingDelayMs());
+  }
+
+  async function runPollCycle() {
+    try {
+      if (
+        S.getLogin() &&
+        !$("mainView")?.classList.contains("hidden") &&
+        !document.hidden
+      ) {
+        await refreshSharedState({ quiet: true, reason: "timer" });
       }
-    }, seconds * 1000);
+    } finally {
+      scheduleNextPoll(pollingDelayMs());
+    }
   }
 
-  async function refreshSharedState({ quiet = false } = {}) {
-    if (!window.AVT_BACKEND?.isConfigured()) {
-      data = S.load();
-      renderAll();
-      if (!quiet) toast("Lokale Statistik aktualisiert.");
-      return;
-    }
+  async function refreshSharedState({ quiet = false, reason = "manual" } = {}) {
+    if (refreshPromise) return refreshPromise;
+
+    refreshPromise = (async () => {
+      if (!window.AVT_BACKEND?.isConfigured()) {
+        data = S.load();
+        renderSharedState();
+        if (!quiet) toast("Lokale Statistik aktualisiert.");
+        return;
+      }
+
+      try {
+        if (AVT_BACKEND.queueCount()) {
+          await syncOfflineQueue({ quiet: true });
+        }
+
+        const snapshot = await AVT_BACKEND.state();
+        applySnapshot(snapshot);
+        backendReady = true;
+        onlineState = "online";
+        lastSyncAt = new Date();
+        showOnlineStatus();
+        renderSharedState();
+
+        if (!quiet) toast("Gemeinsamer Stand aktualisiert.");
+      } catch (error) {
+        onlineState = "offline";
+        setBackendStatus(
+          "offline",
+          `Offline · lokaler Stand · ${AVT_BACKEND.queueCount()} ausstehend`
+        );
+        data = S.load();
+        renderSharedState();
+        if (!quiet) toast("Offline: lokaler Stand angezeigt.");
+      }
+    })();
 
     try {
-      if (AVT_BACKEND.queueCount()) await syncOfflineQueue({ quiet: true });
-      const snapshot = await AVT_BACKEND.state();
-      applySnapshot(snapshot);
-      backendReady = true;
-      onlineState = "online";
-      setBackendStatus("online", `Online · gemeinsamer Test · ${AVT_BACKEND.queueCount()} ausstehend`);
-      renderAll();
-      if (!$("searchPanel").classList.contains("hidden")) renderSearch();
-      if (!$("donationPanel").classList.contains("hidden")) renderDonationPanel();
-      if (!quiet) toast("Gemeinsamer Stand aktualisiert.");
-    } catch (error) {
-      onlineState = "offline";
-      setBackendStatus("offline", `Offline · lokaler Stand · ${AVT_BACKEND.queueCount()} ausstehend`);
-      data = S.load();
-      renderAll();
-      if (!quiet) toast("Offline: lokaler Stand angezeigt.");
+      return await refreshPromise;
+    } finally {
+      refreshPromise = null;
     }
   }
 
@@ -189,7 +306,9 @@
         setBackendStatus("offline", `Synchronisierung offen · ${result.failed} ausstehend`);
         if (!quiet) toast(`${result.failed} Offline-Vorgänge noch offen.`);
       } else {
-        setBackendStatus("online", "Online · Offline-Vorgänge synchronisiert");
+        lastSyncAt = new Date();
+        showOnlineStatus("Online · Offline-Vorgänge synchronisiert");
+        renderSharedState();
         if (!quiet && result.synced) toast(`${result.synced} Offline-Vorgänge synchronisiert.`);
       }
     } catch (error) {
@@ -329,7 +448,8 @@
   }
 
   async function refreshLocalData() {
-    await refreshSharedState({ quiet: false });
+    await refreshSharedState({ quiet: false, reason: "button" });
+    restartPolling();
   }
 
   function bookedConfirmed() {
@@ -865,7 +985,7 @@
 
 
   async function confirmOfflineCheckin() {
-    if (navigator.onLine) return true;
+    if (navigator.onLine && onlineState !== "offline") return true;
     return await confirmBox(
       "Offline-Check-in",
       "Check-in trotz fehlender Verbindung durchführen? Es muss sichergestellt sein, dass während des Offlinebetriebs nur mit diesem einen Device die Check-ins durchgeführt werden.",
@@ -920,7 +1040,11 @@
     if (window.AVT_BACKEND?.isConfigured()) {
       const result = await AVT_BACKEND.write("checkin", { checkin }, { allowQueue: true });
       checkin.offline = Boolean(result.queued);
-      if (result.data) applySnapshot(result.data);
+      if (result.data) {
+        applySnapshot(result.data);
+        lastSyncAt = new Date();
+        showOnlineStatus();
+      }
       if (result.queued) {
         data.checkins[current.token] = checkin;
         S.save(data);
@@ -930,6 +1054,7 @@
       S.save(data);
     }
 
+    restartPolling();
     renderSuccess(checkin);
   }
 
@@ -968,7 +1093,11 @@
     if (window.AVT_BACKEND?.isConfigured()) {
       const result = await AVT_BACKEND.write("manualCheckin", { checkin }, { allowQueue: true });
       checkin.offline = Boolean(result.queued);
-      if (result.data) applySnapshot(result.data);
+      if (result.data) {
+        applySnapshot(result.data);
+        lastSyncAt = new Date();
+        showOnlineStatus();
+      }
       if (result.queued) {
         data.manual.push(checkin);
         S.save(data);
@@ -977,6 +1106,7 @@
       data.manual.push(checkin);
       S.save(data);
     }
+    restartPolling();
     renderSuccess({ ...checkin, number: id, kind: "manual" });
   }
 
@@ -1080,7 +1210,7 @@
 
   function currentStandHtml() {
     const currentStats = stats();
-    return `<div class="card">
+    return `<div id="currentStandCard" class="card">
       <h3>Aktueller Gesamtstand</h3>
       <dl class="detail-grid">
         <dt>Regulär</dt><dd>${currentStats.regular}</dd>
@@ -1097,8 +1227,8 @@
     </div>`;
   }
 
-  function renderDonationPanel() {
-    $("donationAmount").value = "";
+  function renderDonationPanel(preserveInput = false) {
+    if (!preserveInput) $("donationAmount").value = "";
     const currentStats = stats();
     $("donationSummary").innerHTML = `<div class="card">
       <h3>Bisher erfasste Spenden</h3>
@@ -1118,13 +1248,38 @@
     }
     if (!(await confirmBox("Spende bestätigen", `Spende von ${U.euro(amount)} erfassen?`, "Spende erfassen"))) return;
 
-    data.donations.push({ amount, time: U.now() });
-    S.save(data);
+    const donation = {
+      amount,
+      time: U.now(),
+      offline: !navigator.onLine || onlineState === "offline"
+    };
+
+    if (window.AVT_BACKEND?.isConfigured()) {
+      const result = await AVT_BACKEND.write(
+        "donation",
+        { donation },
+        { allowQueue: true }
+      );
+      donation.offline = Boolean(result.queued);
+      if (result.data) {
+        applySnapshot(result.data);
+        lastSyncAt = new Date();
+        showOnlineStatus();
+      }
+      if (result.queued) {
+        data.donations.push(donation);
+        S.save(data);
+      }
+    } else {
+      data.donations.push(donation);
+      S.save(data);
+    }
+
     nav("home", { forceTop: true });
-    updateHeaderStats();
-    initializeBackend();
+    renderSharedState();
+    restartPolling();
     forcePageTop();
-    toast("Spende wurde erfasst.");
+    toast(donation.offline ? "Spende offline gespeichert." : "Spende wurde erfasst.");
   }
 
   function renderOverview() {

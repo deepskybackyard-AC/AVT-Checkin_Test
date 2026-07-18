@@ -1,9 +1,13 @@
 # Changelog
 
-## 0.3.0-test.2
+## 0.3.0-test.3
 
-- Kritischen Backendfehler behoben: `ensureSheets_()` löscht keine Daten mehr.
-- Tabellen werden nur noch durch `setupTestBackend()` beziehungsweise Reset bewusst geleert.
-- Testanmeldungen bleiben bei `bootstrap` und `state` erhalten.
-- QR-Bildimport auf die vorhandene Funktion `decodeImageFile()` korrigiert.
-- Test-QR-Seite auf 0.3.0-test.2 aktualisiert.
+- Robuste automatische Synchronisierung alle 15 Sekunden.
+- Keine überlappenden Backendabrufe mehr.
+- Sofortige Synchronisierung bei `visibilitychange`, `pageshow`, `focus` und `online`.
+- Uhrzeit der letzten erfolgreichen Synchronisierung im Statusbalken.
+- Sichtbare Ansichten werden nach einem Fremd-Check-in aktualisiert.
+- Gleichzeitiger Check-in derselben geöffneten Anmeldung wird sichtbar erkannt.
+- Spenden auf das gemeinsame Backend umgestellt.
+- Spenden-Eingabefeld bleibt bei Hintergrundaktualisierung erhalten.
+- QR-Bildimport korrigiert.

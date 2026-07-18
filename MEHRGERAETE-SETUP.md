@@ -1,4 +1,4 @@
-# AVT Check-in 0.3.0-test.2 – Mehrgeräte-Test
+# AVT Check-in 0.3.0-test.3 – Mehrgeräte-Test
 
 Diese Version besteht aus zwei Teilen:
 
@@ -68,4 +68,19 @@ Da das Testbackend bereits besteht:
 4. Bei Version **Neue Version** auswählen und bereitstellen.
 5. Die `/exec`-URL bleibt unverändert.
 6. Im Frontend die bisherige `/exec`-URL wieder in `js/config.js` eintragen,
-   `enabled: true` setzen und Version 0.3.0-test.2 nach GitHub hochladen.
+   `enabled: true` setzen und Version 0.3.0-test.3 nach GitHub hochladen.
+
+
+## Aktualisierung auf 0.3.0-test.3
+
+Für diese Version ist **keine neue Apps-Script-Bereitstellung nötig**. Das
+bereits funktionierende Backend 0.3.0-test.2 bleibt bestehen.
+
+Nur:
+
+1. vorhandene `/exec`-URL in `js/config.js` eintragen,
+2. `enabled: true` setzen,
+3. Frontend 0.3.0-test.3 nach GitHub hochladen.
+
+Im grünen Statusbalken erscheint nach erfolgreicher Verbindung die Uhrzeit der
+letzten Synchronisierung. Sie muss sich ungefähr alle 15 Sekunden ändern.
