@@ -1,11 +1,9 @@
-# Technische Prüfung – AVT Check-in 0.2.0-test.8
+# Technische Prüfung – AVT Check-in 0.2.0-test.9
 
 Geprüft werden:
 
 - JavaScript-Syntax
-- Abmelden oben in der Kopfzeile als Symbol
-- größerer Aktualisierungsbutton
-- vergrößertes AVT-Logo mit transparentem Schwarz
-- Erfolgsansicht startet an der Zeile mit den fünf Hauptbuttons
-- Offline-Sicherheitsabfrage vor Offline-Check-ins
-- Offline-Hinweis nach Speicherung
+- oberer Veranstaltungsblock nur noch mit zwei sichtbaren Zeilen
+- Info-Button rechts neben den Zeilen
+- Veranstaltungsdetails erscheinen im Dialog
+- Version 0.2.0-test.9 in Kopf und Assets

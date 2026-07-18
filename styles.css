@@ -236,3 +236,46 @@ button:disabled{opacity:.45}
   padding:10px 12px;
   font-weight:700;
 }
+
+
+/* Ergänzungen 0.2.0-test.9 */
+.compact-event-card{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:10px;
+  align-items:center;
+  padding:10px 12px;
+}
+.event-compact-lines{min-width:0}
+.compact-capacity{
+  margin-top:0;
+  font-size:1.06rem;
+  line-height:1.2;
+}
+.compact-safe-capacity{
+  margin-top:2px;
+  font-size:.98rem;
+  line-height:1.2;
+}
+.event-info-btn{
+  width:46px;
+  height:46px;
+  border-radius:12px;
+  padding:0;
+  display:grid;
+  place-items:center;
+  background:white;
+}
+.event-info-btn img{
+  width:36px;
+  height:36px;
+  display:block;
+  object-fit:contain;
+}
+@media(max-width:370px){
+  .compact-event-card{padding:9px 10px;gap:8px}
+  .compact-capacity{font-size:1.01rem}
+  .compact-safe-capacity{font-size:.95rem}
+  .event-info-btn{width:42px;height:42px}
+  .event-info-btn img{width:33px;height:33px}
+}

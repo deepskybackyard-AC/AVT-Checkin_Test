@@ -44,6 +44,7 @@
     });
 
     $("loginForm").addEventListener("submit", login);
+    $("eventInfoTopBtn").addEventListener("click", showEventDetails);
     $("refreshBtn").addEventListener("click", refreshLocalData);
     $("logoutTopBtn").addEventListener("click", () => { S.clearLogin(); showLogin(); });
     $("resetBtn").addEventListener("click", reset);
@@ -215,6 +216,29 @@
     $("presentTop").textContent = currentStats.present;
     $("safeFreeTop").textContent = currentStats.safe;
     $("safeFreeTop").textContent = currentStats.safe;
+  }
+
+  function showEventDetails() {
+    const currentStats = stats();
+    $("modalTitle").textContent = "Veranstaltungsdetails";
+    $("modalBody").innerHTML = `
+      <div class="card" style="margin:0;padding:12px;">
+        <p><strong>${U.esc(C.event.title)}</strong></p>
+        <p>${U.date(C.event.date)} · ${U.esc(C.event.time)} Uhr</p>
+        <p>Lokale Ein-Gerät-Testversion</p>
+      </div>
+      <div class="card" style="margin:12px 0 0 0;padding:12px;">
+        <dl class="detail-grid">
+          <dt>Eingecheckt</dt><dd>${currentStats.present} / ${C.event.maxPersons}</dd>
+          <dt>Sicher freie Plätze</dt><dd>${currentStats.safe}</dd>
+        </dl>
+      </div>`;
+    $("modalConfirm").textContent = "Schließen";
+    $("modalCancel").classList.add("hidden");
+    $("modal").classList.remove("hidden");
+    modalResolve = () => {
+      $("modalCancel").classList.remove("hidden");
+    };
   }
 
   function renderAll() {

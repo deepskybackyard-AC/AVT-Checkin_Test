@@ -1,11 +1,12 @@
 # Projektstatus – AVT Check-in
 
-Aktuelle Version: 0.2.0-test.8
+Aktuelle Version: 0.2.0-test.9
 
 Schwerpunkt dieser Version:
-- kompakter und besser bedienbarer Kopfbereich,
-- bessere Position nach erfolgreichem Check-in,
-- nutzbarer Offline-Einzelgerätmodus im lokalen Test.
+- nochmals kompaktere Start-/Check-in-Ansicht,
+- Veranstaltungsdetails nur noch bei Bedarf per Info-Button,
+- mehr Platz für den eigentlichen Check-in-Ablauf.
 
 Nächster Schritt nach Bestätigung:
-- Übergang zur Mehrgeräte-/Backend-Testphase.
+- letzte Einzelgeräte-Korrekturen sammeln,
+- danach Übergang zur Mehrgeräte-/Backend-Testphase.

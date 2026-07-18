@@ -10,14 +10,14 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/favicon-32.png">
-<link rel="stylesheet" href="styles.css?v=0.2.0-test.8">
+<link rel="stylesheet" href="styles.css?v=0.2.0-test.9">
 </head>
 <body>
 <div class="app-shell">
 <header class="topbar">
   <div class="brand">
     <img src="icons/header-logo.png" alt="Logo der Astronomischen Vereinigung Tübingen e. V.">
-    <div><strong>AVT Check-in <span class="pill">DEMO</span></strong><small>Version 0.2.0-test.8</small></div>
+    <div><strong>AVT Check-in <span class="pill">DEMO</span></strong><small>Version 0.2.0-test.9</small></div>
   </div>
   <div class="head-actions hidden" id="headActions"><button id="logoutTopBtn" class="head-btn" type="button" aria-label="Abmelden" title="Abmelden"><img src="icons/power-icon.png" alt=""></button><button id="refreshBtn" class="head-btn" type="button" aria-label="Statistik aktualisieren" title="Statistik aktualisieren"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M25 9a11 11 0 1 1-4-3.2"/><path d="M24 3v8h-8"/></svg></button></div>
 </header>
@@ -42,12 +42,14 @@
 </section>
 
 <section id="mainView" class="view hidden">
-  <section class="event-card">
-    <div class="eyebrow">Lokale Ein-Gerät-Testversion</div>
-    <h1 id="eventTitle"></h1>
-    <div id="eventTime"></div>
-    <div class="capacity"><strong id="presentTop">0</strong> von <strong>65</strong> Personen eingecheckt</div>
-    <div class="safe-capacity">Sicher freie Plätze: <strong id="safeFreeTop">0</strong></div>
+  <section class="event-card compact-event-card">
+    <div class="event-compact-lines">
+      <div class="capacity compact-capacity"><strong id="presentTop">0</strong> von <strong>65</strong> Personen eingecheckt</div>
+      <div class="safe-capacity compact-safe-capacity">Sicher freie Plätze: <strong id="safeFreeTop">0</strong></div>
+    </div>
+    <button id="eventInfoTopBtn" class="event-info-btn" type="button" aria-label="Veranstaltungsdetails anzeigen" title="Veranstaltungsdetails anzeigen">
+      <img src="icons/info-icon.png" alt="">
+    </button>
   </section>
 
   <nav id="mainActionRow" class="action-row" aria-label="Hauptfunktionen">
@@ -149,9 +151,9 @@
 </div>
 
 <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="js/config.js?v=0.2.0-test.8"></script>
-<script src="js/storage.js?v=0.2.0-test.8"></script>
-<script src="js/scanner.js?v=0.2.0-test.8"></script>
-<script src="js/app.js?v=0.2.0-test.8"></script>
+<script src="js/config.js?v=0.2.0-test.9"></script>
+<script src="js/storage.js?v=0.2.0-test.9"></script>
+<script src="js/scanner.js?v=0.2.0-test.9"></script>
+<script src="js/app.js?v=0.2.0-test.9"></script>
 </body>
 </html>
