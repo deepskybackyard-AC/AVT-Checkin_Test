@@ -1,24 +1,24 @@
-# AVT Check-in Demo 0.2.0-test.13
+# AVT Check-in Demo 0.2.0-test.14
 
-Ein-Gerät-Testversion mit korrigierter Startposition und einblendbarem Passwort.
+Strukturelle Korrektur des abgeschnittenen oberen Inhaltsbereichs.
 
-## Korrigiert
+## Was wurde geändert?
 
-- Nach dem Login wird die Seite mehrfach und zeitversetzt zuverlässig an den
-  Anfang gesetzt. Das berücksichtigt das verzögerte Schließen der
-  Bildschirmtastatur auf iOS.
-- Auch nach dem Erfassen einer Spende wird die Startansicht zuverlässig
-  vollständig von oben angezeigt.
-- Der obere Block mit eingecheckten Personen und sicheren freien Plätzen darf
-  dadurch nicht mehr teilweise unter der festen Kopfzeile verschwinden.
+Die vorherigen Versionen versuchten, Safari nach Login und Spendenerfassung per
+Scroll-Befehl an den Seitenanfang zu setzen. Das war auf iOS nicht zuverlässig.
 
-## Passwortfeld
+In dieser Version wurde der Seitenaufbau grundlegend geändert:
 
-- Die Beschriftung lautet jetzt **„Passwort“**.
-- Direkt rechts neben dem verkürzten Passwortfeld befindet sich ein
-  SVG-Button zum Einblenden.
-- Bei eingeblendetem Passwort wechselt das SVG zum durchgestrichenen Auge.
-- Ein erneuter Tastendruck blendet das Passwort wieder aus.
+- Die Kopfzeile liegt jetzt außerhalb des scrollbaren Inhalts.
+- Nur der Bereich unterhalb der Kopfzeile wird gescrollt.
+- Der Inhalt kann dadurch nicht mehr hinter die Kopfzeile geraten.
+- Nach Login, Spende und Rückkehr zur Startansicht wird nur dieser interne
+  Inhaltsbereich auf Position 0 gesetzt.
+- Die Sonderposition nach erfolgreichem Check-in wurde ebenfalls auf den neuen
+  internen Scrollbereich angepasst.
+
+Ein Cache-Löschen sollte für diesen Fehler nicht erforderlich sein, sobald
+oben **Version 0.2.0-test.14** angezeigt wird.
 
 ## Testpasswort
 

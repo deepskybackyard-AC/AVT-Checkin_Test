@@ -1,9 +1,8 @@
 # Changelog
 
-## 0.2.0-test.13
+## 0.2.0-test.14
 
-- Robusten, mehrfach verzögerten Scroll-Reset für iOS ergänzt.
-- Startansicht nach Login und Spende vollständig von oben positioniert.
-- Passwortbeschriftung auf „Passwort“ verkürzt.
-- Passwort ein-/ausblendbar.
-- Augen- und durchgestrichenes Augen-Symbol als echte Inline-SVGs integriert.
+- Kopfzeile und scrollbarer Inhalt strukturell getrennt.
+- Window-Scrolling durch einen eigenen internen Scrollbereich ersetzt.
+- Login-, Spenden- und Navigations-Scrollpositionen auf den internen Bereich umgestellt.
+- Erfolgsansicht ebenfalls an den neuen Scrollcontainer angepasst.

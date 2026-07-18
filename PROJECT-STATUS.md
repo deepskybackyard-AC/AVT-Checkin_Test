@@ -1,11 +1,11 @@
 # Projektstatus – AVT Check-in
 
-Aktuelle Version: 0.2.0-test.13
+Aktuelle Version: 0.2.0-test.14
 
-Diese Version behebt die noch verbliebene falsche Scrollposition nach Login und
-Spendenerfassung. Zusätzlich wurde die Passwortbedienung auf dem Handy
-verbessert.
+Diese Version behebt den abgeschnittenen oberen Inhaltsbereich nicht mehr durch
+zusätzliche Scroll-Befehle, sondern durch einen robusteren Seitenaufbau:
+Die Kopfzeile ist fest vom scrollbaren Inhalt getrennt.
 
 Nächster Schritt nach Bestätigung:
-- letzte Einzelgeräteprüfung,
+- Einzelgeräteprüfung abschließen,
 - anschließend Mehrgeräte-/Backend-Testphase.

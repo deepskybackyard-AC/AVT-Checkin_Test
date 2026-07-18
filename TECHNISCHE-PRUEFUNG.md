@@ -1,18 +1,18 @@
-# Technische Prüfung – AVT Check-in 0.2.0-test.13
+# Technische Prüfung – AVT Check-in 0.2.0-test.14
 
 Geprüft werden:
 
 - JavaScript-Syntax
-- Passwortbeschriftung „Passwort“
-- Passwortfeld und Sichtbarkeitsschalter stehen nebeneinander
-- beide Augen-Symbole sind echte Inline-SVGs
-- SVG-Zustand und ARIA-Beschriftung wechseln beim Ein-/Ausblenden
-- Login und Spendenerfassung rufen den robusten Scroll-Reset auf
-- Service-Worker-Cache und Asset-Versionen entsprechen 0.2.0-test.13
+- `html` und `body` besitzen keinen eigenen Scrollbereich mehr
+- `.app-shell` verwendet eine feste Viewport-Höhe und Flex-Layout
+- `.topbar` liegt außerhalb des Scrollcontainers
+- `main` ist der einzige vertikale Scrollcontainer
+- Login, Spende, Navigation und Erfolgsansicht scrollen ausschließlich `main`
+- keine `window.scrollTo`-Verwendung mehr in der App-Logik
 
 Ergebnis:
 
 - JavaScript-Syntax: fehlerfrei
-- Passwort-SVGs und Umschaltlogik: vorhanden
-- Mehrstufiger Scroll-Reset: vorhanden
-- Login und Spendenrückkehr verwenden den Scroll-Reset
+- App-Logik verwendet ausschließlich den internen Scrollcontainer
+- Fenster-/Body-Scrolling wurde entfernt
+- Kopfzeile und Inhalt sind strukturell getrennt

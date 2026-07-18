@@ -361,3 +361,50 @@ body.force-top-reset{
   .password-toggle{width:44px;min-width:44px;height:46px}
   .password-eye{width:29px;height:23px}
 }
+
+
+/* Ergänzungen 0.2.0-test.14
+   Strukturelle Korrektur gegen abgeschnittenen oberen Inhaltsbereich */
+html, body{
+  width:100%;
+  height:100%;
+  min-height:100%;
+  overflow:hidden;
+}
+body{
+  position:fixed;
+  inset:0;
+}
+.app-shell{
+  width:100%;
+  max-width:620px;
+  height:100dvh;
+  min-height:100dvh;
+  margin:0 auto;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.topbar{
+  position:relative;
+  top:auto;
+  flex:0 0 auto;
+  z-index:10;
+}
+main{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-y:contain;
+  scroll-behavior:auto;
+  padding-top:12px;
+}
+main > .view:first-child,
+#mainView{
+  min-height:100%;
+}
+body.force-top-reset{
+  overflow:hidden;
+}

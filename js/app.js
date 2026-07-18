@@ -93,31 +93,33 @@
     } catch {}
   }
 
+  function scrollContainer() {
+    return document.querySelector("main");
+  }
+
   function setScrollTopZero() {
-    const scrollingElement = document.scrollingElement || document.documentElement;
-    scrollingElement.scrollTop = 0;
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-    window.scrollTo(0, 0);
+    const container = scrollContainer();
+    if (container) container.scrollTop = 0;
   }
 
   function forcePageTop() {
     document.activeElement?.blur();
-    document.body.classList.add("force-top-reset");
+    const container = scrollContainer();
+    if (!container) return;
 
-    setScrollTopZero();
+    container.scrollTop = 0;
     requestAnimationFrame(() => {
-      setScrollTopZero();
-      requestAnimationFrame(setScrollTopZero);
+      container.scrollTop = 0;
+      requestAnimationFrame(() => {
+        container.scrollTop = 0;
+      });
     });
 
     [50, 150, 350, 700].forEach(delay => {
-      window.setTimeout(setScrollTopZero, delay);
+      window.setTimeout(() => {
+        container.scrollTop = 0;
+      }, delay);
     });
-
-    window.setTimeout(() => {
-      document.body.classList.remove("force-top-reset");
-    }, 800);
   }
 
   function login(event) {
@@ -188,7 +190,7 @@
     if (name === "home" || name === "donation" || options.forceTop) {
       forcePageTop();
     } else if (name !== "result") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      scrollContainer()?.scrollTo({ top: 0, behavior: "smooth" });
     }
   }
 
@@ -751,10 +753,16 @@
 
   function successScrollPosition() {
     const actionRow = $("mainActionRow");
-    const topbar = document.querySelector(".topbar");
-    if (!actionRow) return 0;
-    const topbarHeight = topbar ? topbar.offsetHeight : 0;
-    return Math.max(0, window.scrollY + actionRow.getBoundingClientRect().top - topbarHeight - 4);
+    const container = scrollContainer();
+    if (!actionRow || !container) return 0;
+
+    const containerRect = container.getBoundingClientRect();
+    const actionRect = actionRow.getBoundingClientRect();
+
+    return Math.max(
+      0,
+      container.scrollTop + actionRect.top - containerRect.top - 4
+    );
   }
 
   async function completeExisting() {
@@ -862,7 +870,10 @@
     renderAll();
     updateHeaderStats();
     requestAnimationFrame(() => {
-      window.scrollTo({ top: successScrollPosition(), behavior: "auto" });
+      scrollContainer()?.scrollTo({
+        top: successScrollPosition(),
+        behavior: "auto"
+      });
     });
   }
 
