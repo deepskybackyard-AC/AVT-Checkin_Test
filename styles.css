@@ -279,3 +279,34 @@ button:disabled{opacity:.45}
   .event-info-btn{width:42px;height:42px}
   .event-info-btn img{width:33px;height:33px}
 }
+
+
+/* Ergänzungen 0.2.0-test.11 */
+.compact-event-card{
+  margin-top:6px;
+}
+
+
+/* Ergänzungen 0.2.0-test.12 */
+.event-info-btn{
+  padding:0;
+  display:grid;
+  place-items:center;
+}
+.event-info-svg{
+  width:34px;
+  height:34px;
+  display:block;
+  stroke:#2f4d8b;
+  stroke-width:2.4;
+  fill:none;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.event-info-fill{
+  fill:#2f4d8b;
+  stroke:none;
+}
+@media(max-width:370px){
+  .event-info-svg{width:32px;height:32px}
+}

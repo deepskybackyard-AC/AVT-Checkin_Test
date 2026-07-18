@@ -127,7 +127,11 @@
     }
     if (name === "scan") { resetCamera(); startCamera(); }
 
-    if (name !== "result") {
+    if (name === "home" || name === "donation") {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: "auto" });
+      });
+    } else if (name !== "result") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }
@@ -568,7 +572,7 @@
   function priceHtml(actionButtonHtml = "") {
     const familyPossible = familyEligible();
     const priceSummary = `<div class="price-box">
-      <div><span class="price-label-short">Zu zahlen</span><span class="price-label-long">Zu zahlender Eintritt</span></div>
+      <div>Zu zahlen</div>
       <div class="price-total" data-price-total>${U.euro(chosenPrice())}</div>
       <div data-price-hint>${U.esc(priceHintText())}</div>
     </div>`;
@@ -732,10 +736,8 @@
 
   function renderManual() {
     $("manualContent").innerHTML = `
-      <div class="card"><p class="muted">Für spontan erschienene Personen ohne Voranmeldung.</p></div>
       ${counterHtml(true)}
-      ${priceHtml()}
-      <button id="manualComplete" class="primary full">Spontanen Check-in abschließen</button>`;
+      ${priceHtml('<button id="manualComplete" class="primary checkin-side-button" type="button">Check-in abschließen</button>')}`;
 
     bindCounters(true);
     bindPrice();
@@ -749,13 +751,13 @@
     }
     if (!validateCorrection()) return;
 
-    if (!(await confirmBox("Spontanen Check-in bestätigen", `${U.sumCounts(counts)} Personen mit ${U.euro(chosenPrice())} Eintritt erfassen?`, "Erfassen"))) return;
+    if (!(await confirmBox("Unangemeldeten Check-in bestätigen", `${U.sumCounts(counts)} Personen mit ${U.euro(chosenPrice())} Eintritt erfassen?`, "Erfassen"))) return;
     if (!(await confirmOfflineCheckin())) return;
 
     const id = `M-${String(data.sequence++).padStart(3, "0")}`;
     const checkin = {
       id,
-      name: "Spontaner Check-in",
+      name: "Unangemeldeter Check-in",
       counts: U.clone(counts),
       paid: chosenPrice(),
       basePrice: basePrice(),
@@ -906,8 +908,7 @@
 
     data.donations.push({ amount, time: U.now() });
     S.save(data);
-    renderDonationPanel();
-    renderHome();
+    nav("home");
     updateHeaderStats();
     toast("Spende wurde erfasst.");
   }

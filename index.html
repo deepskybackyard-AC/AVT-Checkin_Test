@@ -10,14 +10,14 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/favicon-32.png">
-<link rel="stylesheet" href="styles.css?v=0.2.0-test.10">
+<link rel="stylesheet" href="styles.css?v=0.2.0-test.12">
 </head>
 <body>
 <div class="app-shell">
 <header class="topbar">
   <div class="brand">
     <img src="icons/header-logo.png" alt="Logo der Astronomischen Vereinigung Tübingen e. V.">
-    <div><strong>AVT Check-in <span class="pill">DEMO</span></strong><small>Version 0.2.0-test.10</small></div>
+    <div><strong>AVT Check-in <span class="pill">DEMO</span></strong><small>Version 0.2.0-test.12</small></div>
   </div>
   <div class="head-actions hidden" id="headActions"><button id="logoutTopBtn" class="head-btn" type="button" aria-label="Abmelden" title="Abmelden"><img src="icons/power-icon.png" alt=""></button><button id="refreshBtn" class="head-btn" type="button" aria-label="Statistik aktualisieren" title="Statistik aktualisieren"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M25 9a11 11 0 1 1-4-3.2"/><path d="M24 3v8h-8"/></svg></button></div>
 </header>
@@ -48,7 +48,11 @@
       <div class="safe-capacity compact-safe-capacity">Sicher freie Plätze: <strong id="safeFreeTop">0</strong></div>
     </div>
     <button id="eventInfoTopBtn" class="event-info-btn" type="button" aria-label="Veranstaltungsdetails anzeigen" title="Veranstaltungsdetails anzeigen">
-      <img src="icons/info-icon.png" alt="">
+      <svg class="event-info-svg" viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="13.5"></circle>
+        <circle cx="16" cy="9.3" r="1.4" class="event-info-fill"></circle>
+        <path d="M16 13.1v9.1"></path>
+      </svg>
     </button>
   </section>
 
@@ -62,7 +66,7 @@
     <button class="nav-icon" data-nav="search" aria-label="Anmeldung suchen" title="Anmeldung suchen"><svg class="nav-svg search-nav-svg" viewBox="0 0 32 32" aria-hidden="true">
   <circle cx="14" cy="14" r="8"></circle><path d="M20 20l8 8"></path>
 </svg></button>
-    <button class="nav-icon" data-nav="manual" aria-label="Spontan einchecken" title="Spontan einchecken"><svg class="nav-svg" viewBox="0 0 32 32" aria-hidden="true">
+    <button class="nav-icon" data-nav="manual" aria-label="Unangemeldet einchecken" title="Unangemeldet einchecken"><svg class="nav-svg" viewBox="0 0 32 32" aria-hidden="true">
   <circle cx="11" cy="9" r="4"></circle><path d="M3 25c0-5 3-8 8-8s8 3 8 8"></path>
   <path d="M25 13v12M19 19h12"></path>
 </svg></button>
@@ -109,7 +113,7 @@
   </section>
 
   <section id="manualPanel" class="panel hidden">
-    <div class="panel-head"><button data-nav="home">‹ Zurück</button><h2>Spontaner Check-in</h2></div>
+    <div class="panel-head"><button data-nav="home">‹ Zurück</button><h2>Unangemeldeter Check-in</h2></div>
     <div id="manualContent"></div>
   </section>
 
@@ -151,9 +155,9 @@
 </div>
 
 <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="js/config.js?v=0.2.0-test.10"></script>
-<script src="js/storage.js?v=0.2.0-test.10"></script>
-<script src="js/scanner.js?v=0.2.0-test.10"></script>
-<script src="js/app.js?v=0.2.0-test.10"></script>
+<script src="js/config.js?v=0.2.0-test.12"></script>
+<script src="js/storage.js?v=0.2.0-test.12"></script>
+<script src="js/scanner.js?v=0.2.0-test.12"></script>
+<script src="js/app.js?v=0.2.0-test.12"></script>
 </body>
 </html>
