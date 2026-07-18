@@ -1,4 +1,4 @@
-# AVT Check-in 0.3.0-test.1 – Mehrgeräte-Test
+# AVT Check-in 0.3.0-test.2 – Mehrgeräte-Test
 
 Diese Version besteht aus zwei Teilen:
 
@@ -54,3 +54,18 @@ Dann testen:
 6. Doppel-Check-in derselben Anmeldung muss vom Backend verhindert werden.
 7. Warteliste W-006 erst nach Warnung einchecken.
 8. Optional: Ein Gerät offline nehmen und genau ein Gerät für Offline-Check-ins nutzen.
+
+
+## Aktualisierung von 0.3.0-test.1
+
+Da das Testbackend bereits besteht:
+
+1. Nur den Inhalt von `backend-apps-script/Code.gs` im vorhandenen
+   Apps-Script-Projekt ersetzen und speichern.
+2. `setupTestBackend()` erneut ausführen. Dadurch werden die Testanmeldungen
+   wieder korrekt angelegt.
+3. **Bereitstellen → Bereitstellungen verwalten → Bearbeiten** öffnen.
+4. Bei Version **Neue Version** auswählen und bereitstellen.
+5. Die `/exec`-URL bleibt unverändert.
+6. Im Frontend die bisherige `/exec`-URL wieder in `js/config.js` eintragen,
+   `enabled: true` setzen und Version 0.3.0-test.2 nach GitHub hochladen.

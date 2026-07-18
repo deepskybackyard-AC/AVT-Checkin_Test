@@ -63,7 +63,7 @@
     $("stopCameraButton").addEventListener("click", () => SC.stop());
     $("imageInput").addEventListener("change", async event => {
       try {
-        const result = await SC.decodeFile(event.target.files?.[0]);
+        const result = await SC.decodeImageFile(event.target.files?.[0]);
         handlePayload(result.data);
       } catch (error) {
         toast(error.message || "QR-Code nicht erkannt.");

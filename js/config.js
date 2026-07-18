@@ -1,6 +1,6 @@
 "use strict";
 window.AVT_CONFIG = Object.freeze({
-  version: "0.3.0-test.1",
+  version: "0.3.0-test.2",
   password: "avt-demo",
   qrPrefix: "AVT-CHECKIN-DEMO-V8:",
   backend: {

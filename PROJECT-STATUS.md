@@ -1,20 +1,13 @@
 # Projektstatus – AVT Check-in
 
-Aktuelle Version: 0.3.0-test.1
+Aktuelle Version: 0.3.0-test.2
 
-Diese Version startet die Mehrgeräte-/Backend-Testphase.
+Die Backend-Verbindung der ersten Mehrgeräte-Version funktionierte, aber der
+Statusabruf löschte die Testtabellen. Dieser Fehler ist behoben.
 
-## Enthalten
+Für die Aktualisierung:
 
-- Frontend bleibt auf GitHub Pages.
-- Backend läuft als separates Google-Apps-Script-Web-App.
-- Testdaten werden in einem automatisch erzeugten Google Sheet gespeichert.
-- Das bestehende Produktivsheet wird nicht verändert.
-
-## Nächste Prüfung
-
-- iPhone 12 mini und Samsung Tablet 9,7" parallel testen.
-- Gemeinsame Statistik prüfen.
-- Doppel-Check-in prüfen.
-- Wartelistenreihenfolge prüfen.
-- Offline-Einzelgerätmodus prüfen.
+1. `backend-apps-script/Code.gs` im Apps-Script-Testprojekt ersetzen.
+2. `setupTestBackend()` erneut ausführen.
+3. Die bestehende Web-App über „Bereitstellungen verwalten“ als neue Version veröffentlichen.
+4. Frontend 0.3.0-test.2 mit der bisherigen `/exec`-URL konfigurieren und auf GitHub hochladen.

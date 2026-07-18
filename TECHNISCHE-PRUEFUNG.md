@@ -1,11 +1,11 @@
-# Technische Prüfung – AVT Check-in 0.3.0-test.1
+# Technische Prüfung – AVT Check-in 0.3.0-test.2
 
-Geprüft werden:
+Geprüft:
 
-- JavaScript-Syntax des Frontends
-- Apps-Script-Dateien vorhanden
-- Backend-Konfiguration im Frontend vorhanden
-- Service Worker enthält `js/backend.js`
-- Frontend kann ohne Backend weiter im lokalen Fallback-Modus laufen
-- Schreibvorgänge im Backend verwenden `LockService`
-- Backend bietet `bootstrap`, `state`, `checkin`, `manualCheckin`, `donation`, `reset`
+- JavaScript-Syntax aller Frontend-Dateien
+- `ensureSheets_()` enthält kein `sheet.clear()`
+- `snapshot_()` darf bestehende Tabelleninhalte nicht löschen
+- `resetData_()` leert Tabellen ausschließlich über `resetSheet_()`
+- Backendversion ist 0.3.0-test.2
+- QR-Bildimport verwendet `decodeImageFile()`
+- vorhandene QR-Codes entsprechen weiterhin dem Präfix `AVT-CHECKIN-DEMO-V8:`
