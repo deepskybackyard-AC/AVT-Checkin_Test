@@ -1,18 +1,11 @@
-# Technische Prüfung – AVT Check-in 0.2.0-test.14
+# Technische Prüfung – AVT Check-in 0.3.0-test.1
 
 Geprüft werden:
 
-- JavaScript-Syntax
-- `html` und `body` besitzen keinen eigenen Scrollbereich mehr
-- `.app-shell` verwendet eine feste Viewport-Höhe und Flex-Layout
-- `.topbar` liegt außerhalb des Scrollcontainers
-- `main` ist der einzige vertikale Scrollcontainer
-- Login, Spende, Navigation und Erfolgsansicht scrollen ausschließlich `main`
-- keine `window.scrollTo`-Verwendung mehr in der App-Logik
-
-Ergebnis:
-
-- JavaScript-Syntax: fehlerfrei
-- App-Logik verwendet ausschließlich den internen Scrollcontainer
-- Fenster-/Body-Scrolling wurde entfernt
-- Kopfzeile und Inhalt sind strukturell getrennt
+- JavaScript-Syntax des Frontends
+- Apps-Script-Dateien vorhanden
+- Backend-Konfiguration im Frontend vorhanden
+- Service Worker enthält `js/backend.js`
+- Frontend kann ohne Backend weiter im lokalen Fallback-Modus laufen
+- Schreibvorgänge im Backend verwenden `LockService`
+- Backend bietet `bootstrap`, `state`, `checkin`, `manualCheckin`, `donation`, `reset`

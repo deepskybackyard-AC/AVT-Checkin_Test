@@ -1,24 +1,20 @@
-# AVT Check-in Demo 0.2.0-test.14
+# AVT Check-in Multi-Device 0.3.0-test.1
 
-Strukturelle Korrektur des abgeschnittenen oberen Inhaltsbereichs.
+Erste Mehrgeräte-Testversion für iPhone 12 mini und Samsung Tablet 9,7".
 
-## Was wurde geändert?
+## Wichtig
 
-Die vorherigen Versionen versuchten, Safari nach Login und Spendenerfassung per
-Scroll-Befehl an den Seitenanfang zu setzen. Das war auf iOS nicht zuverlässig.
+Diese Version benötigt ein Apps-Script-Testbackend.
 
-In dieser Version wurde der Seitenaufbau grundlegend geändert:
+- Ohne Backend läuft sie weiterhin im lokalen Fallback-Modus.
+- Mit Backend sehen mehrere Geräte denselben Check-in-Stand.
+- Schreibvorgänge werden serverseitig mit `LockService` geschützt.
+- Doppel-Check-ins derselben Anmeldung werden serverseitig verhindert.
+- Offline-Check-ins werden lokal zwischengespeichert und später synchronisiert.
 
-- Die Kopfzeile liegt jetzt außerhalb des scrollbaren Inhalts.
-- Nur der Bereich unterhalb der Kopfzeile wird gescrollt.
-- Der Inhalt kann dadurch nicht mehr hinter die Kopfzeile geraten.
-- Nach Login, Spende und Rückkehr zur Startansicht wird nur dieser interne
-  Inhaltsbereich auf Position 0 gesetzt.
-- Die Sonderposition nach erfolgreichem Check-in wurde ebenfalls auf den neuen
-  internen Scrollbereich angepasst.
+## Einrichtung
 
-Ein Cache-Löschen sollte für diesen Fehler nicht erforderlich sein, sobald
-oben **Version 0.2.0-test.14** angezeigt wird.
+Siehe: `MEHRGERAETE-SETUP.md`
 
 ## Testpasswort
 

@@ -28,6 +28,9 @@
   let searchFilter = "open";
   let activeNav = "";
   let modalResolve = null;
+  let backendReady = false;
+  let onlineState = "local";
+  let pollTimer = null;
 
   function init() {
     // Die Veranstaltungsdetails werden seit test.9 nur noch im Info-Dialog
@@ -71,6 +74,128 @@
 
     if (S.getLogin()) showMain();
     else showLogin();
+  }
+
+
+  function setBackendStatus(kind, text) {
+    const target = $("backendStatus");
+    if (!target) return;
+    target.className = `backend-status ${kind || "local"}`;
+    target.textContent = text;
+  }
+
+  function applySnapshot(snapshot) {
+    if (!snapshot) return;
+    if (snapshot.event) {
+      C.event.id = snapshot.event.id;
+      C.event.title = snapshot.event.title;
+      C.event.date = snapshot.event.date;
+      C.event.time = snapshot.event.time;
+      C.event.maxPersons = snapshot.event.maxPersons;
+    }
+    if (snapshot.prices) Object.assign(C.prices, snapshot.prices);
+    if (snapshot.familyRule) Object.assign(C.familyRule, snapshot.familyRule);
+    if (Array.isArray(snapshot.correctionReasons)) {
+      correctionReasons.splice(0, correctionReasons.length, ...snapshot.correctionReasons
+        .filter(reason => reason.active !== false)
+        .sort((left, right) => Number(left.order || 0) - Number(right.order || 0)));
+    }
+    if (Array.isArray(snapshot.registrations)) {
+      window.AVT_REGISTRATIONS = Object.freeze(snapshot.registrations);
+    }
+    if (snapshot.data) {
+      data = {
+        checkins: snapshot.data.checkins || {},
+        manual: snapshot.data.manual || [],
+        donations: snapshot.data.donations || [],
+        sequence: Number(snapshot.data.sequence || 1)
+      };
+      S.save(data);
+    }
+  }
+
+  async function initializeBackend() {
+    if (!window.AVT_BACKEND?.isConfigured()) {
+      backendReady = false;
+      setBackendStatus("local", "Lokaler Modus · Backend noch nicht konfiguriert");
+      applySnapshot(window.AVT_BACKEND?.loadCached?.());
+      renderAll();
+      return;
+    }
+
+    try {
+      const snapshot = await AVT_BACKEND.bootstrap();
+      applySnapshot(snapshot);
+      backendReady = true;
+      onlineState = "online";
+      setBackendStatus("online", `Online · gemeinsamer Test · ${AVT_BACKEND.queueCount()} ausstehend`);
+      startPolling();
+      if (AVT_BACKEND.queueCount()) await syncOfflineQueue();
+      renderAll();
+    } catch (error) {
+      backendReady = false;
+      onlineState = "offline";
+      const cached = AVT_BACKEND.loadCached();
+      if (cached) applySnapshot(cached);
+      setBackendStatus("offline", `Offline · lokaler Stand · ${AVT_BACKEND.queueCount()} ausstehend`);
+      renderAll();
+    }
+  }
+
+  function startPolling() {
+    if (pollTimer) window.clearInterval(pollTimer);
+    const seconds = Math.max(5, Number(C.backend?.pollSeconds || 15));
+    pollTimer = window.setInterval(async () => {
+      if (!$("mainView")?.classList.contains("hidden")) {
+        await refreshSharedState({ quiet: true });
+      }
+    }, seconds * 1000);
+  }
+
+  async function refreshSharedState({ quiet = false } = {}) {
+    if (!window.AVT_BACKEND?.isConfigured()) {
+      data = S.load();
+      renderAll();
+      if (!quiet) toast("Lokale Statistik aktualisiert.");
+      return;
+    }
+
+    try {
+      if (AVT_BACKEND.queueCount()) await syncOfflineQueue({ quiet: true });
+      const snapshot = await AVT_BACKEND.state();
+      applySnapshot(snapshot);
+      backendReady = true;
+      onlineState = "online";
+      setBackendStatus("online", `Online · gemeinsamer Test · ${AVT_BACKEND.queueCount()} ausstehend`);
+      renderAll();
+      if (!$("searchPanel").classList.contains("hidden")) renderSearch();
+      if (!$("donationPanel").classList.contains("hidden")) renderDonationPanel();
+      if (!quiet) toast("Gemeinsamer Stand aktualisiert.");
+    } catch (error) {
+      onlineState = "offline";
+      setBackendStatus("offline", `Offline · lokaler Stand · ${AVT_BACKEND.queueCount()} ausstehend`);
+      data = S.load();
+      renderAll();
+      if (!quiet) toast("Offline: lokaler Stand angezeigt.");
+    }
+  }
+
+  async function syncOfflineQueue({ quiet = false } = {}) {
+    if (!window.AVT_BACKEND?.isConfigured() || !AVT_BACKEND.queueCount()) return;
+    try {
+      const result = await AVT_BACKEND.syncQueue();
+      if (result.data) applySnapshot(result.data);
+      if (result.failed) {
+        setBackendStatus("offline", `Synchronisierung offen · ${result.failed} ausstehend`);
+        if (!quiet) toast(`${result.failed} Offline-Vorgänge noch offen.`);
+      } else {
+        setBackendStatus("online", "Online · Offline-Vorgänge synchronisiert");
+        if (!quiet && result.synced) toast(`${result.synced} Offline-Vorgänge synchronisiert.`);
+      }
+    } catch (error) {
+      setBackendStatus("offline", `Offline · ${AVT_BACKEND.queueCount()} ausstehend`);
+      if (!quiet) toast("Synchronisierung derzeit nicht möglich.");
+    }
   }
 
   function togglePasswordVisibility() {
@@ -155,6 +280,7 @@
     $("headActions").classList.remove("hidden");
     nav("home", { forceTop: true });
     updateHeaderStats();
+    initializeBackend();
     forcePageTop();
   }
 
@@ -202,12 +328,8 @@
     });
   }
 
-  function refreshLocalData() {
-    data = S.load();
-    renderAll();
-    if (!$("searchPanel").classList.contains("hidden")) renderSearch();
-    if (!$("donationPanel").classList.contains("hidden")) renderDonationPanel();
-    toast(navigator.onLine ? "Statistik aktualisiert." : "Offline: lokale Daten aktualisiert.");
+  async function refreshLocalData() {
+    await refreshSharedState({ quiet: false });
   }
 
   function bookedConfirmed() {
@@ -781,7 +903,7 @@
     if (!(await confirmBox("Check-in bestätigen", message, "Einchecken"))) return;
     if (!(await confirmOfflineCheckin())) return;
 
-    data.checkins[current.token] = {
+    const checkin = {
       token: current.token,
       number: current.number,
       name: current.name,
@@ -791,11 +913,24 @@
       tariff: tariffMode,
       correctionReason,
       kind: current.status === "confirmed" ? "regular" : current.status === "waitlist" ? "waitlist" : "exception",
-      offline: !navigator.onLine,
+      offline: !navigator.onLine || onlineState === "offline",
       time: U.now()
     };
-    S.save(data);
-    renderSuccess(data.checkins[current.token]);
+
+    if (window.AVT_BACKEND?.isConfigured()) {
+      const result = await AVT_BACKEND.write("checkin", { checkin }, { allowQueue: true });
+      checkin.offline = Boolean(result.queued);
+      if (result.data) applySnapshot(result.data);
+      if (result.queued) {
+        data.checkins[current.token] = checkin;
+        S.save(data);
+      }
+    } else {
+      data.checkins[current.token] = checkin;
+      S.save(data);
+    }
+
+    renderSuccess(checkin);
   }
 
   function renderManual() {
@@ -830,8 +965,18 @@
       offline: !navigator.onLine,
       time: U.now()
     };
-    data.manual.push(checkin);
-    S.save(data);
+    if (window.AVT_BACKEND?.isConfigured()) {
+      const result = await AVT_BACKEND.write("manualCheckin", { checkin }, { allowQueue: true });
+      checkin.offline = Boolean(result.queued);
+      if (result.data) applySnapshot(result.data);
+      if (result.queued) {
+        data.manual.push(checkin);
+        S.save(data);
+      }
+    } else {
+      data.manual.push(checkin);
+      S.save(data);
+    }
     renderSuccess({ ...checkin, number: id, kind: "manual" });
   }
 
@@ -977,6 +1122,7 @@
     S.save(data);
     nav("home", { forceTop: true });
     updateHeaderStats();
+    initializeBackend();
     forcePageTop();
     toast("Spende wurde erfasst.");
   }
@@ -1009,7 +1155,12 @@
 
   async function reset() {
     if (await confirmBox("Testdaten zurücksetzen", "Alle lokalen Check-ins, Einnahmen und Spenden löschen?", "Zurücksetzen")) {
-      data = S.reset();
+      if (window.AVT_BACKEND?.isConfigured() && onlineState !== "offline") {
+        const snapshot = await AVT_BACKEND.resetServer();
+        applySnapshot(snapshot);
+      } else {
+        data = S.reset();
+      }
       current = null;
       counts = null;
       resetPriceState();

@@ -363,7 +363,7 @@ body.force-top-reset{
 }
 
 
-/* Ergänzungen 0.2.0-test.14
+/* Ergänzungen 0.3.0-test.1
    Strukturelle Korrektur gegen abgeschnittenen oberen Inhaltsbereich */
 html, body{
   width:100%;
@@ -407,4 +407,32 @@ main > .view:first-child,
 }
 body.force-top-reset{
   overflow:hidden;
+}
+
+
+/* Ergänzungen 0.3.0-test.1 */
+.backend-status{
+  margin:0 0 8px;
+  border-radius:12px;
+  padding:8px 11px;
+  font-size:.86rem;
+  font-weight:750;
+  border:1px solid #c8d2da;
+  background:#fff;
+  color:#52616f;
+}
+.backend-status.online{
+  background:#e4f4ea;
+  border-color:#9fceb0;
+  color:#245a36;
+}
+.backend-status.offline{
+  background:#fff2cf;
+  border-color:#e0bd69;
+  color:#6f5300;
+}
+.backend-status.local{
+  background:#e9eef4;
+  border-color:#c4cfda;
+  color:#435466;
 }

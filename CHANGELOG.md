@@ -1,8 +1,13 @@
 # Changelog
 
-## 0.2.0-test.14
+## 0.3.0-test.1
 
-- Kopfzeile und scrollbarer Inhalt strukturell getrennt.
-- Window-Scrolling durch einen eigenen internen Scrollbereich ersetzt.
-- Login-, Spenden- und Navigations-Scrollpositionen auf den internen Bereich umgestellt.
-- Erfolgsansicht ebenfalls an den neuen Scrollcontainer angepasst.
+- Erstes Apps-Script-Testbackend für mehrere Geräte.
+- JSONP-Schnittstelle für GitHub-Pages-Frontend zu Apps Script.
+- Gemeinsamer Check-in-Stand über Google Sheet.
+- Serverseitige Sperre gegen gleichzeitige Schreibzugriffe.
+- Serverseitige Erkennung von Doppel-Check-ins.
+- Auto-Aktualisierung alle 15 Sekunden.
+- Manuelle Aktualisierung/Synchronisierung über Kopfzeilenbutton.
+- Offline-Queue für Ein-Gerät-Notbetrieb vorbereitet.
+- Backend-Statusanzeige oberhalb des Veranstaltungsblocks.

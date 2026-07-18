@@ -1,11 +1,20 @@
 # Projektstatus – AVT Check-in
 
-Aktuelle Version: 0.2.0-test.14
+Aktuelle Version: 0.3.0-test.1
 
-Diese Version behebt den abgeschnittenen oberen Inhaltsbereich nicht mehr durch
-zusätzliche Scroll-Befehle, sondern durch einen robusteren Seitenaufbau:
-Die Kopfzeile ist fest vom scrollbaren Inhalt getrennt.
+Diese Version startet die Mehrgeräte-/Backend-Testphase.
 
-Nächster Schritt nach Bestätigung:
-- Einzelgeräteprüfung abschließen,
-- anschließend Mehrgeräte-/Backend-Testphase.
+## Enthalten
+
+- Frontend bleibt auf GitHub Pages.
+- Backend läuft als separates Google-Apps-Script-Web-App.
+- Testdaten werden in einem automatisch erzeugten Google Sheet gespeichert.
+- Das bestehende Produktivsheet wird nicht verändert.
+
+## Nächste Prüfung
+
+- iPhone 12 mini und Samsung Tablet 9,7" parallel testen.
+- Gemeinsame Statistik prüfen.
+- Doppel-Check-in prüfen.
+- Wartelistenreihenfolge prüfen.
+- Offline-Einzelgerätmodus prüfen.
