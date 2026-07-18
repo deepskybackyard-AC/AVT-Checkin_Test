@@ -1,4 +1,4 @@
-# AVT Check-in 0.3.0-test.5 – Mehrgeräte-Test
+# AVT Check-in 0.3.0-test.6 – Mehrgeräte-Test
 
 Diese Version besteht aus zwei Teilen:
 
@@ -68,10 +68,10 @@ Da das Testbackend bereits besteht:
 4. Bei Version **Neue Version** auswählen und bereitstellen.
 5. Die `/exec`-URL bleibt unverändert.
 6. Im Frontend die bisherige `/exec`-URL wieder in `js/config.js` eintragen,
-   `enabled: true` setzen und Version 0.3.0-test.5 nach GitHub hochladen.
+   `enabled: true` setzen und Version 0.3.0-test.6 nach GitHub hochladen.
 
 
-## Aktualisierung auf 0.3.0-test.5
+## Aktualisierung auf 0.3.0-test.6
 
 Für diese Version ist **keine neue Apps-Script-Bereitstellung nötig**. Das
 bereits funktionierende Backend 0.3.0-test.2 bleibt bestehen.
@@ -80,34 +80,52 @@ Nur:
 
 1. vorhandene `/exec`-URL in `js/config.js` eintragen,
 2. `enabled: true` setzen,
-3. Frontend 0.3.0-test.5 nach GitHub hochladen.
+3. Frontend 0.3.0-test.6 nach GitHub hochladen.
 
 Im grünen Statusbalken erscheint nach erfolgreicher Verbindung die Uhrzeit der
 letzten Synchronisierung. Sie muss sich ungefähr alle 15 Sekunden ändern.
 
 
-## Aktualisierung auf 0.3.0-test.5
+## Aktualisierung auf 0.3.0-test.6
 
 Für diese Version ist keine neue Apps-Script-Bereitstellung erforderlich.
 
 1. Die bereits funktionierende `/exec`-URL erneut in `js/config.js` eintragen.
 2. `enabled: true` setzen.
-3. Frontend 0.3.0-test.5 nach GitHub hochladen.
+3. Frontend 0.3.0-test.6 nach GitHub hochladen.
 4. Auf beiden Geräten die neue Versionsnummer prüfen.
 
 Die Warnzeit für einen noch nicht bestätigten Check-in steht unter
 `saveFlow.warningSeconds` und beträgt standardmäßig 8 Sekunden.
 
 
-## Aktualisierung auf 0.3.0-test.5
+## Aktualisierung auf 0.3.0-test.6
 
 Für diese Version ist keine neue Apps-Script-Bereitstellung erforderlich.
 
 1. Die vorhandene `/exec`-URL in `js/config.js` eintragen.
 2. `enabled: true` setzen.
-3. Frontend 0.3.0-test.5 nach GitHub hochladen.
+3. Frontend 0.3.0-test.6 nach GitHub hochladen.
 4. Auf beiden Geräten die Versionsnummer kontrollieren.
 
 Beim Test einer Offline-Spende muss im oberen Balken ausdrücklich
 `1 Spende ausstehend` erscheinen. Nach der Synchronisierung wird die gelbe
 Spendenmeldung grün.
+
+
+## Aktualisierung auf 0.3.0-test.6
+
+Eine neue Apps-Script-Bereitstellung ist nicht erforderlich.
+
+1. Die vorhandene `/exec`-URL in `js/config.js` eintragen.
+2. `enabled: true` setzen.
+3. Frontend 0.3.0-test.6 nach GitHub hochladen.
+4. Auf beiden Geräten die Versionsnummer prüfen.
+
+Test des Parallelfalls:
+
+1. Auf beiden Geräten dieselbe offene Anmeldung auswählen.
+2. Auf Gerät 1 den Check-in abschließen.
+3. Unmittelbar danach auf Gerät 2 abschließen.
+4. Gerät 2 muss „Bereits eingecheckt“ melden.
+5. Die Anmeldung darf im gemeinsamen Stand nur einmal enthalten sein.

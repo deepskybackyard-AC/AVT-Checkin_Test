@@ -1,45 +1,30 @@
-# AVT Check-in Multi-Device 0.3.0-test.5
+# AVT Check-in Multi-Device 0.3.0-test.6
 
-Diese Version vereinheitlicht die Speicherung von Check-ins und Spenden.
+Diese Version ergänzt eine eindeutige Rückmeldung bei einem nahezu
+gleichzeitigen Check-in auf zwei Geräten.
 
-## Spende speichern
+## Parallel-Check-in derselben Anmeldung
 
-Nach Bestätigung einer Online-Spende:
+Wenn Gerät 1 eine Anmeldung erfolgreich speichert und Gerät 2 dieselbe
+Anmeldung nahezu gleichzeitig abschließen möchte:
 
-- wird die übrige Oberfläche gesperrt,
-- erscheint derselbe animierte SVG-Spinner wie beim Check-in,
-- darunter steht **„Spende wird gespeichert …“**,
-- nach 8 Sekunden erscheinen dieselben Optionen:
-  **Weiter warten**, **Offline speichern**, **Abbrechen**.
+- verhindert das Backend weiterhin den zweiten Check-in,
+- die App lädt sofort den gemeinsamen Stand,
+- das Speicher-Overlay wird beendet,
+- Gerät 2 zeigt jetzt ausdrücklich:
 
-Auch bei der Spende wird bei **Weiter warten** derselbe bereits gestartete
-Vorgang weiter beobachtet. Es wird keine zweite Spende gesendet.
+**Bereits eingecheckt**
 
-## Offline-Spende
+**Diese Anmeldung wurde inzwischen auf einem anderen Gerät eingecheckt. Es
+wurde kein zweiter Check-in gespeichert. Der gemeinsame Gesamtstand wurde
+aktualisiert.**
 
-Nach einer offline erfassten oder bewusst offline zwischengespeicherten Spende
-erscheint gelb:
+Die App unterscheidet dafür zwischen:
 
-**Spende offline gespeichert – noch nicht synchronisiert**
-
-Nach erfolgreicher Übertragung wird die Meldung grün:
-
-**Die offline zwischengespeicherte Spende wurde erfolgreich synchronisiert.**
-
-Bei mehreren Spenden wird die Meldung automatisch in die Mehrzahl gesetzt.
-
-## Status der Warteschlange
-
-Der obere Statusbalken unterscheidet nun die Art der offenen Vorgänge, zum
-Beispiel:
-
-- `Offline · lokaler Stand · 1 Check-in ausstehend`
-- `Offline · lokaler Stand · 1 Spende ausstehend`
-- `Offline · lokaler Stand · 2 Check-ins und 1 Spende ausstehend`
-
-Unangemeldete Check-ins werden dabei als Check-ins gezählt.
+- der Bestätigung des eigenen Schreibvorgangs und
+- einem bereits vorhandenen Check-in mit einer anderen `operationId`.
 
 ## Backend
 
-Das funktionierende Apps-Script-Backend `0.3.0-test.2` bleibt kompatibel und
-muss nicht neu bereitgestellt werden.
+Das bereits verwendete Apps-Script-Backend `0.3.0-test.2` bleibt kompatibel.
+Eine neue Backend-Bereitstellung ist nicht erforderlich.

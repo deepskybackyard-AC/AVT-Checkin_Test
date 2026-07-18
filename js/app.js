@@ -446,10 +446,14 @@
     };
   }
 
-  function showSaveDelayChoice(action, requestFailed = false) {
+  function showSaveDelayChoice(action, requestFailed = false, requestErrorMessage = "") {
     const text = operationText(action);
+    const duplicateHint = /bereits\s+eingecheckt/i.test(requestErrorMessage)
+      ? " Der gemeinsame Stand wird geprüft."
+      : "";
+
     $("saveDelayBody").textContent = requestFailed
-      ? `${text.subject} wurde bisher nicht bestätigt. Du kannst weiter warten, offline zwischenspeichern oder abbrechen.`
+      ? `${text.subject} wurde bisher nicht bestätigt.${duplicateHint} Du kannst weiter warten, offline zwischenspeichern oder abbrechen.`
       : `${text.subject} wurde vom Server noch nicht bestätigt. Du kannst weiter warten, offline zwischenspeichern oder abbrechen.`;
 
     $("saveDelayOffline").classList.toggle(
@@ -471,30 +475,44 @@
     if (resolve) resolve(value);
   }
 
-  function findSavedOperation(snapshot, operation) {
+  function inspectSavedOperation(snapshot, operation) {
     const snapshotData = snapshot?.data;
-    if (!snapshotData) return null;
+    if (!snapshotData) return { state: "unknown", record: null };
 
     if (operation.action === "checkin") {
       const token = operation.payload?.checkin?.token;
-      return token ? snapshotData.checkins?.[token] || null : null;
+      const existing = token ? snapshotData.checkins?.[token] || null : null;
+
+      if (!existing) return { state: "missing", record: null };
+
+      return existing.operationId === operation.operationId
+        ? { state: "saved", record: existing }
+        : { state: "duplicate", record: existing };
     }
 
     if (operation.action === "manualCheckin") {
       const checkin = operation.payload?.checkin || {};
-      return (snapshotData.manual || []).find(item =>
+      const existing = (snapshotData.manual || []).find(item =>
         item.operationId === operation.operationId ||
         (checkin.id && item.id === checkin.id)
       ) || null;
+
+      return existing
+        ? { state: "saved", record: existing }
+        : { state: "missing", record: null };
     }
 
     if (operation.action === "donation") {
-      return (snapshotData.donations || []).find(item =>
+      const existing = (snapshotData.donations || []).find(item =>
         item.operationId === operation.operationId
       ) || null;
+
+      return existing
+        ? { state: "saved", record: existing }
+        : { state: "missing", record: null };
     }
 
-    return null;
+    return { state: "unknown", record: null };
   }
 
   function acceptManagedSaveResult(result, operation, uiMode) {
@@ -536,6 +554,7 @@
     let completed = false;
     let requestFinished = false;
     let requestFailed = false;
+    let requestError = null;
     let uiMode = "waiting";
     let verificationRunning = false;
     let completeResolve = null;
@@ -552,17 +571,47 @@
       completeResolve({ status: "saved", result, operation });
     }
 
+    function markDuplicate(snapshot, existing) {
+      if (completed) return;
+      completed = true;
+
+      if (snapshot) applySnapshot(snapshot);
+      AVT_BACKEND.removeQueued(operation.operationId);
+      lastSyncAt = new Date();
+      showOnlineStatus();
+      closeSaveDelayChoice("duplicate");
+
+      completeResolve({
+        status: "duplicate",
+        operation,
+        existing,
+        data: snapshot
+      });
+    }
+
     async function verifyOnce() {
       try {
         const snapshot = await AVT_BACKEND.state();
-        const saved = findSavedOperation(snapshot, operation);
-        if (saved) {
-          markSaved({ ok: true, data: snapshot, verified: true, saved });
-          return { checked: true, saved: true };
+        const inspection = inspectSavedOperation(snapshot, operation);
+
+        if (inspection.state === "saved") {
+          markSaved({
+            ok: true,
+            data: snapshot,
+            verified: true,
+            saved: inspection.record
+          });
+          return { checked: true, saved: true, duplicate: false };
         }
-        return { checked: true, saved: false };
+
+        if (inspection.state === "duplicate") {
+          markDuplicate(snapshot, inspection.record);
+          return { checked: true, saved: false, duplicate: true };
+        }
+
+        return { checked: true, saved: false, duplicate: false };
       } catch {
-        return { checked: false, saved: false };
+        return { checked: false, saved: false, duplicate: false };
       }
     }
 
@@ -587,9 +636,21 @@
         requestFinished = true;
         markSaved(result);
       })
-      .catch(() => {
+      .catch(error => {
         requestFinished = true;
         requestFailed = true;
+        requestError = error;
+
+        // Bei einem konkurrierenden Check-in liefert das Backend bereits
+        // "Diese Anmeldung wurde bereits eingecheckt". Der gemeinsame Stand
+        // wird sofort geprüft, ohne den Check-in erneut zu senden.
+        if (
+          action === "checkin" &&
+          /bereits\s+eingecheckt/i.test(String(error?.message || ""))
+        ) {
+          verifyOnce();
+        }
+
         startVerificationLoop();
       });
 
@@ -599,17 +660,21 @@
         wait(savingWarningMilliseconds()).then(() => ({ status: "warning" }))
       ]);
 
-      if (outcome.status === "saved") {
+      if (outcome.status === "saved" || outcome.status === "duplicate") {
         hideSavingOverlay();
         return outcome;
       }
 
-      const choice = await showSaveDelayChoice(action, requestFailed);
+      const choice = await showSaveDelayChoice(
+        action,
+        requestFailed,
+        requestError?.message || ""
+      );
 
-      if (choice === "saved") {
-        const savedOutcome = await completion;
+      if (choice === "saved" || choice === "duplicate") {
+        const finishedOutcome = await completion;
         hideSavingOverlay();
-        return savedOutcome;
+        return finishedOutcome;
       }
 
       if (choice === "continue") {
@@ -629,10 +694,10 @@
       if (choice === "cancel") {
         const verification = await verifyOnce();
 
-        if (completed || verification.saved) {
-          const savedOutcome = await completion;
+        if (completed || verification.saved || verification.duplicate) {
+          const finishedOutcome = await completion;
           hideSavingOverlay();
-          return savedOutcome;
+          return finishedOutcome;
         }
 
         if (requestFinished && verification.checked) {
@@ -1466,6 +1531,18 @@
         checkin.operationId = result.operation.operationId;
 
         if (result.status === "cancelled") {
+          return;
+        }
+
+        if (result.status === "duplicate") {
+          renderSharedState();
+          restartPolling();
+          showMessage(
+            "Bereits eingecheckt",
+            "Diese Anmeldung wurde inzwischen auf einem anderen Gerät eingecheckt. Es wurde kein zweiter Check-in gespeichert. Der gemeinsame Gesamtstand wurde aktualisiert.",
+            "warning",
+            true
+          );
           return;
         }
 

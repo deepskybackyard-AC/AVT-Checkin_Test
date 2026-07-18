@@ -1,8 +1,8 @@
 # Projektstatus – AVT Check-in
 
-Aktuelle Frontendversion: 0.3.0-test.5
+Aktuelle Frontendversion: 0.3.0-test.6
 Kompatible Backendversion: 0.3.0-test.2
 
-Mehrgerätebetrieb, automatische Synchronisierung und Offline-Nachsynchronisierung
-sind bestätigt. Mit dieser Version verwenden Check-ins, unangemeldete Check-ins
-und Spenden denselben sichtbaren und abgesicherten Speicherablauf.
+Die Mehrgerätefunktionen sind bestätigt. Diese Version ergänzt die noch
+fehlende Bedienrückmeldung, wenn dieselbe Anmeldung nahezu gleichzeitig auf
+zwei Geräten abgeschlossen wird.
