@@ -30,8 +30,12 @@
   let modalResolve = null;
 
   function init() {
-    $("eventTitle").textContent = C.event.title;
-    $("eventTime").textContent = `${U.date(C.event.date)} · ${C.event.time} Uhr`;
+    // Die Veranstaltungsdetails werden seit test.9 nur noch im Info-Dialog
+    // angezeigt. Optionale Elemente werden nur befüllt, wenn sie existieren.
+    const eventTitleElement = $("eventTitle");
+    const eventTimeElement = $("eventTime");
+    if (eventTitleElement) eventTitleElement.textContent = C.event.title;
+    if (eventTimeElement) eventTimeElement.textContent = `${U.date(C.event.date)} · ${C.event.time} Uhr`;
 
     document.querySelectorAll("[data-nav]").forEach(button => {
       button.addEventListener("click", () => nav(button.dataset.nav));
@@ -214,7 +218,6 @@
   function updateHeaderStats() {
     const currentStats = stats();
     $("presentTop").textContent = currentStats.present;
-    $("safeFreeTop").textContent = currentStats.safe;
     $("safeFreeTop").textContent = currentStats.safe;
   }
 

@@ -1,12 +1,13 @@
 # Projektstatus – AVT Check-in
 
-Aktuelle Version: 0.2.0-test.9
+Aktuelle Version: 0.2.0-test.10
 
-Schwerpunkt dieser Version:
-- nochmals kompaktere Start-/Check-in-Ansicht,
-- Veranstaltungsdetails nur noch bei Bedarf per Info-Button,
-- mehr Platz für den eigentlichen Check-in-Ablauf.
+Diese Version repariert ausschließlich die durch die kompakte
+Veranstaltungsanzeige verursachte fehlerhafte Initialisierung.
+
+Der Passwortschutz bleibt zunächst als gemeinsamer, dauerhaft speicherbarer
+Zugang erhalten. Über eine vollständige Entfernung des Passworts wird erst vor
+der Produktivfassung entschieden.
 
 Nächster Schritt nach Bestätigung:
-- letzte Einzelgeräte-Korrekturen sammeln,
-- danach Übergang zur Mehrgeräte-/Backend-Testphase.
+- Übergang zur Mehrgeräte-/Backend-Testphase.
