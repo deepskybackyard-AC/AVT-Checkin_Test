@@ -1,15 +1,14 @@
-# Technische Prüfung – AVT Check-in 0.3.0-test.4
+# Technische Prüfung – AVT Check-in 0.3.0-test.5
 
 Geprüft:
 
 - JavaScript-Syntax aller Frontend-Dateien
-- animiertes Inline-SVG vorhanden
-- Speicher-Overlay sperrt `.app-shell` mit `inert`
-- Standardwarnzeit 8 Sekunden
-- „Weiter warten“ ruft `sendPrepared()` nicht erneut auf
-- derselbe Vorgang besitzt eine stabile `operationId`
-- Warnzyklus startet nach jeder Entscheidung „Weiter warten“ erneut
-- Offline-Fallback legt dieselbe Operation in der Queue ab
-- Queue kann durch bereits erfolgreichen Originalrequest idempotent bereinigt werden
-- gelbe und grüne Offline-Synchronisationsmeldung vorhanden
-- Apps-Script-Backend muss nicht geändert werden
+- Spenden verwenden `saveOperationWithProgress("donation", ...)`
+- animiertes Overlay zeigt „Spende wird gespeichert …“
+- Donation-Operation erhält eine stabile `operationId`
+- `findSavedOperation()` erkennt gespeicherte Spenden
+- Queue-Synchronisierung liefert die Typen der synchronisierten Operationen
+- Statusbalken unterscheidet Check-ins und Spenden
+- gelbe Meldung für noch offene Offline-Spende
+- grüne Meldung nach erfolgreicher Spendensynchronisierung
+- Apps-Script-Backend muss nicht verändert werden

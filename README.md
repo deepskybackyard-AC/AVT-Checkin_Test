@@ -1,55 +1,45 @@
-# AVT Check-in Multi-Device 0.3.0-test.4
+# AVT Check-in Multi-Device 0.3.0-test.5
 
-Diese Version ergänzt einen sicheren und deutlich sichtbaren Speicherablauf.
+Diese Version vereinheitlicht die Speicherung von Check-ins und Spenden.
 
-## Neue Speicheranzeige
+## Spende speichern
 
-Nach der Bestätigung eines Online-Check-ins:
+Nach Bestätigung einer Online-Spende:
 
-- wird die gesamte übrige Oberfläche gesperrt,
-- erscheint ein animierter, rotierender SVG-Spinner,
-- darunter steht **„Check-in wird gespeichert …“**.
+- wird die übrige Oberfläche gesperrt,
+- erscheint derselbe animierte SVG-Spinner wie beim Check-in,
+- darunter steht **„Spende wird gespeichert …“**,
+- nach 8 Sekunden erscheinen dieselben Optionen:
+  **Weiter warten**, **Offline speichern**, **Abbrechen**.
 
-## Verzögerte Speicherung
+Auch bei der Spende wird bei **Weiter warten** derselbe bereits gestartete
+Vorgang weiter beobachtet. Es wird keine zweite Spende gesendet.
 
-Die Warnzeit ist in `js/config.js` konfigurierbar:
+## Offline-Spende
 
-```javascript
-saveFlow: {
-  warningSeconds: 8,
-  requestTimeoutSeconds: 30,
-  verificationSeconds: 3,
-  offlineFallbackEnabled: true
-}
-```
+Nach einer offline erfassten oder bewusst offline zwischengespeicherten Spende
+erscheint gelb:
 
-Nach standardmäßig 8 Sekunden erscheint eine Auswahl:
+**Spende offline gespeichert – noch nicht synchronisiert**
 
-- **Weiter warten**
-- **Offline speichern**
-- **Abbrechen**
+Nach erfolgreicher Übertragung wird die Meldung grün:
 
-Bei **Weiter warten** wird derselbe bereits gestartete Vorgang weiter
-beobachtet. Der Check-in wird ausdrücklich nicht erneut an den Server gesendet.
-Nach weiteren 8 Sekunden erscheint die Auswahl erneut, solange noch keine
-Bestätigung vorliegt.
+**Die offline zwischengespeicherte Spende wurde erfolgreich synchronisiert.**
 
-Bei **Abbrechen** kehrt die App nur dann zur Prüfung zurück, wenn der
-ursprüngliche Request beendet ist und das Backend bestätigt, dass der Vorgang
-nicht gespeichert wurde. Bei unklarem Status bleibt die sichere Auswahl
-„Weiter warten“ oder „Offline speichern“.
+Bei mehreren Spenden wird die Meldung automatisch in die Mehrzahl gesetzt.
 
-## Offline-Synchronisierung
+## Status der Warteschlange
 
-Solange ein Check-in nur lokal gepuffert ist, erscheint gelb:
+Der obere Statusbalken unterscheidet nun die Art der offenen Vorgänge, zum
+Beispiel:
 
-**Offline gespeichert – noch nicht synchronisiert**
+- `Offline · lokaler Stand · 1 Check-in ausstehend`
+- `Offline · lokaler Stand · 1 Spende ausstehend`
+- `Offline · lokaler Stand · 2 Check-ins und 1 Spende ausstehend`
 
-Nach erfolgreicher Übertragung wird die Meldung grün und lautet:
-
-**Die offline zwischengespeicherten Check-ins wurden erfolgreich synchronisiert.**
+Unangemeldete Check-ins werden dabei als Check-ins gezählt.
 
 ## Backend
 
-Das bereits funktionierende Apps-Script-Backend `0.3.0-test.2` bleibt
-kompatibel. Es muss nicht neu bereitgestellt werden.
+Das funktionierende Apps-Script-Backend `0.3.0-test.2` bleibt kompatibel und
+muss nicht neu bereitgestellt werden.

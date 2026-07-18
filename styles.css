@@ -519,3 +519,10 @@ body.force-top-reset{
 @media(prefers-reduced-motion:reduce){
   .saving-spinner-rotor{animation-duration:2.2s}
 }
+
+
+/* Ergänzungen 0.3.0-test.5 */
+#operationNotice > .offline-indicator,
+#operationNotice > .offline-synced-indicator{
+  margin:0 0 10px;
+}

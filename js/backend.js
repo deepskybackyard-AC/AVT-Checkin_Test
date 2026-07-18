@@ -178,24 +178,47 @@ window.AVT_BACKEND = (function () {
 
   async function syncQueue() {
     const queue = getQueue();
-    if (!queue.length) return { ok: true, synced: 0, failed: 0, errors: [] };
+    if (!queue.length) {
+      return {
+        ok: true,
+        synced: 0,
+        failed: 0,
+        errors: [],
+        syncedOperations: []
+      };
+    }
+
     const remaining = [];
     const errors = [];
-    let synced = 0;
+    const syncedOperations = [];
 
     for (const operation of queue) {
       try {
         await request(operation.action, operation);
-        synced += 1;
+        syncedOperations.push({
+          operationId: operation.operationId,
+          action: operation.action
+        });
       } catch (error) {
         remaining.push(operation);
-        errors.push({ operationId: operation.operationId, error: error.message });
+        errors.push({
+          operationId: operation.operationId,
+          action: operation.action,
+          error: error.message
+        });
       }
     }
 
     setQueue(remaining);
     const fresh = await state().catch(() => null);
-    return { ok: true, synced, failed: remaining.length, errors, data: fresh };
+    return {
+      ok: true,
+      synced: syncedOperations.length,
+      failed: remaining.length,
+      errors,
+      syncedOperations,
+      data: fresh
+    };
   }
 
   async function resetServer() {

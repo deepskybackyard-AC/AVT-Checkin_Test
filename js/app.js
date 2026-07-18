@@ -35,6 +35,7 @@
   let lastSyncAt = null;
   let saveDelayResolve = null;
   let lastSuccessCheckin = null;
+  let donationNotice = null;
 
   function init() {
     // Die Veranstaltungsdetails werden seit test.9 nur noch im Info-Dialog
@@ -169,13 +170,42 @@
     }).format(lastSyncAt);
   }
 
+  function queueBreakdown(operations = AVT_BACKEND.getQueue()) {
+    return (operations || []).reduce((result, operation) => {
+      if (operation.action === "donation") result.donations += 1;
+      else if (operation.action === "checkin" || operation.action === "manualCheckin") result.checkins += 1;
+      else result.other += 1;
+      return result;
+    }, { checkins: 0, donations: 0, other: 0 });
+  }
+
+  function outstandingText(operations = AVT_BACKEND.getQueue()) {
+    const counts = queueBreakdown(operations);
+    const parts = [];
+
+    if (counts.checkins) {
+      parts.push(`${counts.checkins} ${counts.checkins === 1 ? "Check-in" : "Check-ins"}`);
+    }
+    if (counts.donations) {
+      parts.push(`${counts.donations} ${counts.donations === 1 ? "Spende" : "Spenden"}`);
+    }
+    if (counts.other) {
+      parts.push(`${counts.other} ${counts.other === 1 ? "Vorgang" : "Vorgänge"}`);
+    }
+
+    return parts.length ? `${parts.join(" und ")} ausstehend` : "0 ausstehend";
+  }
+
   function showOnlineStatus(text = "Online · gemeinsamer Test") {
     const time = syncTimeLabel();
-    const queue = AVT_BACKEND.queueCount();
     setBackendStatus(
       "online",
-      `${text}${time ? ` · ${time}` : ""} · ${queue} ausstehend`
+      `${text}${time ? ` · ${time}` : ""} · ${outstandingText()}`
     );
+  }
+
+  function showOfflineStatus(text = "Offline · lokaler Stand") {
+    setBackendStatus("offline", `${text} · ${outstandingText()}`);
   }
 
   function renderSharedState() {
@@ -197,6 +227,7 @@
     }
 
     updateSuccessSyncBanner();
+    updateDonationSyncBanner();
 
     if (
       !$("resultPanel").classList.contains("hidden") &&
@@ -238,7 +269,7 @@
       onlineState = "offline";
       const cached = AVT_BACKEND.loadCached();
       if (cached) applySnapshot(cached);
-      setBackendStatus("offline", `Offline · lokaler Stand · ${AVT_BACKEND.queueCount()} ausstehend`);
+      showOfflineStatus();
       renderSharedState();
       restartPolling();
     }
@@ -301,10 +332,7 @@
         if (!quiet) toast("Gemeinsamer Stand aktualisiert.");
       } catch (error) {
         onlineState = "offline";
-        setBackendStatus(
-          "offline",
-          `Offline · lokaler Stand · ${AVT_BACKEND.queueCount()} ausstehend`
-        );
+        showOfflineStatus();
         data = S.load();
         renderSharedState();
         if (!quiet) toast("Offline: lokaler Stand angezeigt.");
@@ -318,25 +346,61 @@
     }
   }
 
+  function synchronizedOperationsMessage(operations) {
+    const counts = queueBreakdown(operations);
+
+    if (counts.checkins && counts.donations) {
+      return "Die offline zwischengespeicherten Check-ins und Spenden wurden erfolgreich synchronisiert.";
+    }
+    if (counts.donations) {
+      return counts.donations === 1
+        ? "Die offline zwischengespeicherte Spende wurde erfolgreich synchronisiert."
+        : "Die offline zwischengespeicherten Spenden wurden erfolgreich synchronisiert.";
+    }
+    if (counts.checkins) {
+      return counts.checkins === 1
+        ? "Der offline zwischengespeicherte Check-in wurde erfolgreich synchronisiert."
+        : "Die offline zwischengespeicherten Check-ins wurden erfolgreich synchronisiert.";
+    }
+    return "Die offline zwischengespeicherten Vorgänge wurden erfolgreich synchronisiert.";
+  }
+
   async function syncOfflineQueue({ quiet = false } = {}) {
     if (!window.AVT_BACKEND?.isConfigured() || !AVT_BACKEND.queueCount()) return;
+
     try {
       const result = await AVT_BACKEND.syncQueue();
       if (result.data) applySnapshot(result.data);
+
       if (result.failed) {
-        setBackendStatus("offline", `Synchronisierung offen · ${result.failed} ausstehend`);
-        if (!quiet) toast(`${result.failed} Offline-Vorgänge noch offen.`);
-      } else {
-        lastSyncAt = new Date();
-        showOnlineStatus("Online · Offline-Vorgänge synchronisiert");
-        renderSharedState();
-        updateSuccessSyncBanner();
-        if (result.synced) {
-          toast("Offline zwischengespeicherte Check-ins wurden erfolgreich synchronisiert.");
-        }
+        showOfflineStatus("Synchronisierung offen");
+        if (!quiet) toast(`${outstandingText()} – Synchronisierung noch offen.`);
+        return;
+      }
+
+      lastSyncAt = new Date();
+      showOnlineStatus("Online · Offline-Vorgänge synchronisiert");
+
+      const syncedOperations = result.syncedOperations || [];
+      const donationOperations = syncedOperations.filter(operation => operation.action === "donation");
+
+      if (donationOperations.length) {
+        donationNotice = {
+          state: "synced",
+          count: donationOperations.length,
+          operationId: donationOperations[donationOperations.length - 1].operationId
+        };
+      }
+
+      renderSharedState();
+      updateSuccessSyncBanner();
+      updateDonationSyncBanner();
+
+      if (result.synced) {
+        toast(synchronizedOperationsMessage(syncedOperations));
       }
     } catch (error) {
-      setBackendStatus("offline", `Offline · ${AVT_BACKEND.queueCount()} ausstehend`);
+      showOfflineStatus("Offline");
       if (!quiet) toast("Synchronisierung derzeit nicht möglich.");
     }
   }
@@ -353,7 +417,8 @@
     return Math.max(1, Number(C.saveFlow?.verificationSeconds || 3)) * 1000;
   }
 
-  function showSavingOverlay() {
+  function showSavingOverlay(text = "Check-in wird gespeichert …") {
+    $("savingText").textContent = text;
     document.querySelector(".app-shell")?.setAttribute("inert", "");
     $("savingOverlay").classList.remove("hidden");
   }
@@ -363,10 +428,29 @@
     document.querySelector(".app-shell")?.removeAttribute("inert");
   }
 
-  function showSaveDelayChoice(requestFailed = false) {
+  function operationText(action) {
+    if (action === "donation") {
+      return {
+        saving: "Spende wird gespeichert …",
+        subject: "Die Spende",
+        queuedSynced: "Die offline zwischengespeicherte Spende wurde erfolgreich synchronisiert.",
+        savedLater: "Die Spende wurde inzwischen doch gespeichert."
+      };
+    }
+
+    return {
+      saving: "Check-in wird gespeichert …",
+      subject: "Der Check-in",
+      queuedSynced: "Der offline zwischengespeicherte Check-in wurde erfolgreich synchronisiert.",
+      savedLater: "Der Check-in wurde inzwischen doch gespeichert."
+    };
+  }
+
+  function showSaveDelayChoice(action, requestFailed = false) {
+    const text = operationText(action);
     $("saveDelayBody").textContent = requestFailed
-      ? "Der Check-in wurde bisher nicht bestätigt. Du kannst weiter warten, ihn offline zwischenspeichern oder abbrechen."
-      : "Der Check-in wurde vom Server noch nicht bestätigt. Du kannst weiter warten, ihn offline zwischenspeichern oder abbrechen.";
+      ? `${text.subject} wurde bisher nicht bestätigt. Du kannst weiter warten, offline zwischenspeichern oder abbrechen.`
+      : `${text.subject} wurde vom Server noch nicht bestätigt. Du kannst weiter warten, offline zwischenspeichern oder abbrechen.`;
 
     $("saveDelayOffline").classList.toggle(
       "hidden",
@@ -404,22 +488,39 @@
       ) || null;
     }
 
+    if (operation.action === "donation") {
+      return (snapshotData.donations || []).find(item =>
+        item.operationId === operation.operationId
+      ) || null;
+    }
+
     return null;
   }
 
   function acceptManagedSaveResult(result, operation, uiMode) {
+    const text = operationText(operation.action);
+
     if (result?.data) applySnapshot(result.data);
     AVT_BACKEND.removeQueued(operation.operationId);
     lastSyncAt = new Date();
     showOnlineStatus();
 
+    if (operation.action === "donation" && uiMode === "queued") {
+      donationNotice = {
+        state: "synced",
+        count: 1,
+        operationId: operation.operationId
+      };
+    }
+
     if (uiMode === "queued") {
       renderSharedState();
       updateSuccessSyncBanner();
-      toast("Offline zwischengespeicherter Check-in wurde erfolgreich synchronisiert.");
+      updateDonationSyncBanner();
+      toast(text.queuedSynced);
     } else if (uiMode === "cancelled") {
       renderSharedState();
-      toast("Der Check-in wurde inzwischen doch gespeichert.");
+      toast(text.savedLater);
     }
   }
 
@@ -427,6 +528,9 @@
     const operation = AVT_BACKEND.prepareOperation(action, payload);
     if (operation.payload?.checkin) {
       operation.payload.checkin.operationId = operation.operationId;
+    }
+    if (operation.payload?.donation) {
+      operation.payload.donation.operationId = operation.operationId;
     }
 
     let completed = false;
@@ -476,7 +580,7 @@
       verificationRunning = false;
     }
 
-    showSavingOverlay();
+    showSavingOverlay(operationText(action).saving);
 
     AVT_BACKEND.sendPrepared(operation)
       .then(result => {
@@ -500,7 +604,7 @@
         return outcome;
       }
 
-      const choice = await showSaveDelayChoice(requestFailed);
+      const choice = await showSaveDelayChoice(action, requestFailed);
 
       if (choice === "saved") {
         const savedOutcome = await completion;
@@ -546,10 +650,21 @@
     return await completion;
   }
 
-  function prepareOfflineOperation(action, checkin) {
-    const operation = AVT_BACKEND.prepareOperation(action, { checkin });
-    checkin.operationId = operation.operationId;
-    operation.payload.checkin.operationId = operation.operationId;
+  function prepareOfflineOperation(action, record) {
+    const payload = action === "donation"
+      ? { donation: record }
+      : { checkin: record };
+
+    const operation = AVT_BACKEND.prepareOperation(action, payload);
+    record.operationId = operation.operationId;
+
+    if (operation.payload.checkin) {
+      operation.payload.checkin.operationId = operation.operationId;
+    }
+    if (operation.payload.donation) {
+      operation.payload.donation.operationId = operation.operationId;
+    }
+
     AVT_BACKEND.enqueuePrepared(operation);
     return operation;
   }
@@ -587,6 +702,29 @@
     } else {
       $("resultContent")?.insertAdjacentHTML("afterbegin", html);
     }
+  }
+
+  function donationNoticeHtml() {
+    if (!donationNotice) return "";
+
+    if (donationNotice.state === "pending") {
+      return '<div class="offline-indicator">Spende offline gespeichert – noch nicht synchronisiert</div>';
+    }
+
+    const text = donationNotice.count === 1
+      ? "Die offline zwischengespeicherte Spende wurde erfolgreich synchronisiert."
+      : "Die offline zwischengespeicherten Spenden wurden erfolgreich synchronisiert.";
+
+    return `<div class="offline-synced-indicator">${text}</div>`;
+  }
+
+  function updateDonationSyncBanner() {
+    const target = $("operationNotice");
+    if (!target) return;
+
+    const html = donationNoticeHtml();
+    target.innerHTML = html;
+    target.classList.toggle("hidden", !html);
   }
 
   function togglePasswordVisibility() {
@@ -1256,8 +1394,17 @@
   }
 
 
-  async function confirmOfflineCheckin() {
+  async function confirmOfflineOperation(type = "checkin") {
     if (navigator.onLine && onlineState !== "offline") return true;
+
+    if (type === "donation") {
+      return await confirmBox(
+        "Offline-Spende",
+        "Spende trotz fehlender Verbindung erfassen? Es muss sichergestellt sein, dass während des Offlinebetriebs nur mit diesem einen Device Check-ins und Spenden erfasst werden.",
+        "Offline erfassen"
+      );
+    }
+
     return await confirmBox(
       "Offline-Check-in",
       "Check-in trotz fehlender Verbindung durchführen? Es muss sichergestellt sein, dass während des Offlinebetriebs nur mit diesem einen Device die Check-ins durchgeführt werden.",
@@ -1293,7 +1440,7 @@
     }
 
     if (!(await confirmBox("Check-in bestätigen", message, "Einchecken"))) return;
-    if (!(await confirmOfflineCheckin())) return;
+    if (!(await confirmOfflineOperation("checkin"))) return;
 
     const checkin = {
       token: current.token,
@@ -1356,7 +1503,7 @@
     if (!validateCorrection()) return;
 
     if (!(await confirmBox("Unangemeldeten Check-in bestätigen", `${U.sumCounts(counts)} Personen mit ${U.euro(chosenPrice())} Eintritt erfassen?`, "Erfassen"))) return;
-    if (!(await confirmOfflineCheckin())) return;
+    if (!(await confirmOfflineOperation("checkin"))) return;
 
     const id = `M-${String(data.sequence).padStart(3, "0")}`;
     const checkin = {
@@ -1541,11 +1688,19 @@
   async function saveDonation() {
     const rawValue = $("donationAmount").value;
     const amount = Number(String(rawValue).replace(",", "."));
+
     if (!Number.isFinite(amount) || amount <= 0) {
       toast("Bitte einen gültigen Spendenbetrag eingeben.");
       return;
     }
-    if (!(await confirmBox("Spende bestätigen", `Spende von ${U.euro(amount)} erfassen?`, "Spende erfassen"))) return;
+
+    if (!(await confirmBox(
+      "Spende bestätigen",
+      `Spende von ${U.euro(amount)} erfassen?`,
+      "Spende erfassen"
+    ))) return;
+
+    if (!(await confirmOfflineOperation("donation"))) return;
 
     const donation = {
       amount,
@@ -1554,20 +1709,36 @@
     };
 
     if (window.AVT_BACKEND?.isConfigured()) {
-      const result = await AVT_BACKEND.write(
-        "donation",
-        { donation },
-        { allowQueue: true }
-      );
-      donation.offline = Boolean(result.queued);
-      if (result.data) {
-        applySnapshot(result.data);
-        lastSyncAt = new Date();
-        showOnlineStatus();
-      }
-      if (result.queued) {
+      if (donation.offline) {
+        prepareOfflineOperation("donation", donation);
+        donationNotice = {
+          state: "pending",
+          count: 1,
+          operationId: donation.operationId
+        };
         data.donations.push(donation);
         S.save(data);
+      } else {
+        const result = await saveOperationWithProgress("donation", { donation });
+        donation.operationId = result.operation.operationId;
+
+        if (result.status === "cancelled") {
+          return;
+        }
+
+        donation.offline = result.status === "queued";
+
+        if (result.status === "queued") {
+          donationNotice = {
+            state: "pending",
+            count: 1,
+            operationId: donation.operationId
+          };
+          data.donations.push(donation);
+          S.save(data);
+        } else {
+          donationNotice = null;
+        }
       }
     } else {
       data.donations.push(donation);
@@ -1576,9 +1747,15 @@
 
     nav("home", { forceTop: true });
     renderSharedState();
+    updateDonationSyncBanner();
     restartPolling();
     forcePageTop();
-    toast(donation.offline ? "Spende offline gespeichert." : "Spende wurde erfasst.");
+
+    toast(
+      donation.offline
+        ? "Spende offline gespeichert – noch nicht synchronisiert."
+        : "Spende wurde erfasst."
+    );
   }
 
   function renderOverview() {
