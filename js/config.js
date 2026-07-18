@@ -1,6 +1,6 @@
 "use strict";
 window.AVT_CONFIG = Object.freeze({
-  version: "0.3.0-test.2",
+  version: "0.3.0-test.4",
   password: "avt-demo",
   qrPrefix: "AVT-CHECKIN-DEMO-V8:",
   backend: {
@@ -9,6 +9,12 @@ window.AVT_CONFIG = Object.freeze({
     url: "https://script.google.com/macros/s/AKfycbx2xoma92sks4q82YBZeQop5_ELB0ecDyLAzWUdFMncYRBU0BeTEgQes70w8xt8NNR_rA/exec",
     enabled: true,
     pollSeconds: 15
+  },
+  saveFlow: {
+    warningSeconds: 8,
+    requestTimeoutSeconds: 30,
+    verificationSeconds: 3,
+    offlineFallbackEnabled: true
   },
   event: {
     id: "EVT-DEMO-2026-07-15",

@@ -33,6 +33,8 @@
   let pollTimer = null;
   let refreshPromise = null;
   let lastSyncAt = null;
+  let saveDelayResolve = null;
+  let lastSuccessCheckin = null;
 
   function init() {
     // Die Veranstaltungsdetails werden seit test.9 nur noch im Info-Dialog
@@ -73,6 +75,9 @@
     });
     $("modalCancel").addEventListener("click", () => closeModal(false));
     $("modalConfirm").addEventListener("click", () => closeModal(true));
+    $("saveDelayContinue").addEventListener("click", () => closeSaveDelayChoice("continue"));
+    $("saveDelayOffline").addEventListener("click", () => closeSaveDelayChoice("offline"));
+    $("saveDelayCancel").addEventListener("click", () => closeSaveDelayChoice("cancel"));
 
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden && S.getLogin()) {
@@ -138,6 +143,20 @@
         sequence: Number(snapshot.data.sequence || 1)
       };
       S.save(data);
+
+      if (lastSuccessCheckin?.operationId) {
+        const serverCheckin = [
+          ...Object.values(data.checkins || {}),
+          ...(data.manual || [])
+        ].find(item => item.operationId === lastSuccessCheckin.operationId);
+        if (serverCheckin) {
+          lastSuccessCheckin = {
+            ...lastSuccessCheckin,
+            ...serverCheckin,
+            offline: true
+          };
+        }
+      }
     }
   }
 
@@ -176,6 +195,8 @@
     if (currentStand) {
       currentStand.outerHTML = currentStandHtml();
     }
+
+    updateSuccessSyncBanner();
 
     if (
       !$("resultPanel").classList.contains("hidden") &&
@@ -309,11 +330,262 @@
         lastSyncAt = new Date();
         showOnlineStatus("Online · Offline-Vorgänge synchronisiert");
         renderSharedState();
-        if (!quiet && result.synced) toast(`${result.synced} Offline-Vorgänge synchronisiert.`);
+        updateSuccessSyncBanner();
+        if (result.synced) {
+          toast("Offline zwischengespeicherte Check-ins wurden erfolgreich synchronisiert.");
+        }
       }
     } catch (error) {
       setBackendStatus("offline", `Offline · ${AVT_BACKEND.queueCount()} ausstehend`);
       if (!quiet) toast("Synchronisierung derzeit nicht möglich.");
+    }
+  }
+
+  function wait(milliseconds) {
+    return new Promise(resolve => window.setTimeout(resolve, milliseconds));
+  }
+
+  function savingWarningMilliseconds() {
+    return Math.max(1, Number(C.saveFlow?.warningSeconds || 8)) * 1000;
+  }
+
+  function verificationMilliseconds() {
+    return Math.max(1, Number(C.saveFlow?.verificationSeconds || 3)) * 1000;
+  }
+
+  function showSavingOverlay() {
+    document.querySelector(".app-shell")?.setAttribute("inert", "");
+    $("savingOverlay").classList.remove("hidden");
+  }
+
+  function hideSavingOverlay() {
+    $("savingOverlay").classList.add("hidden");
+    document.querySelector(".app-shell")?.removeAttribute("inert");
+  }
+
+  function showSaveDelayChoice(requestFailed = false) {
+    $("saveDelayBody").textContent = requestFailed
+      ? "Der Check-in wurde bisher nicht bestätigt. Du kannst weiter warten, ihn offline zwischenspeichern oder abbrechen."
+      : "Der Check-in wurde vom Server noch nicht bestätigt. Du kannst weiter warten, ihn offline zwischenspeichern oder abbrechen.";
+
+    $("saveDelayOffline").classList.toggle(
+      "hidden",
+      C.saveFlow?.offlineFallbackEnabled === false
+    );
+    $("saveDelayModal").classList.remove("hidden");
+
+    return new Promise(resolve => {
+      saveDelayResolve = resolve;
+    });
+  }
+
+  function closeSaveDelayChoice(value) {
+    if ($("saveDelayModal").classList.contains("hidden")) return;
+    $("saveDelayModal").classList.add("hidden");
+    const resolve = saveDelayResolve;
+    saveDelayResolve = null;
+    if (resolve) resolve(value);
+  }
+
+  function findSavedOperation(snapshot, operation) {
+    const snapshotData = snapshot?.data;
+    if (!snapshotData) return null;
+
+    if (operation.action === "checkin") {
+      const token = operation.payload?.checkin?.token;
+      return token ? snapshotData.checkins?.[token] || null : null;
+    }
+
+    if (operation.action === "manualCheckin") {
+      const checkin = operation.payload?.checkin || {};
+      return (snapshotData.manual || []).find(item =>
+        item.operationId === operation.operationId ||
+        (checkin.id && item.id === checkin.id)
+      ) || null;
+    }
+
+    return null;
+  }
+
+  function acceptManagedSaveResult(result, operation, uiMode) {
+    if (result?.data) applySnapshot(result.data);
+    AVT_BACKEND.removeQueued(operation.operationId);
+    lastSyncAt = new Date();
+    showOnlineStatus();
+
+    if (uiMode === "queued") {
+      renderSharedState();
+      updateSuccessSyncBanner();
+      toast("Offline zwischengespeicherter Check-in wurde erfolgreich synchronisiert.");
+    } else if (uiMode === "cancelled") {
+      renderSharedState();
+      toast("Der Check-in wurde inzwischen doch gespeichert.");
+    }
+  }
+
+  async function saveOperationWithProgress(action, payload) {
+    const operation = AVT_BACKEND.prepareOperation(action, payload);
+    if (operation.payload?.checkin) {
+      operation.payload.checkin.operationId = operation.operationId;
+    }
+
+    let completed = false;
+    let requestFinished = false;
+    let requestFailed = false;
+    let uiMode = "waiting";
+    let verificationRunning = false;
+    let completeResolve = null;
+
+    const completion = new Promise(resolve => {
+      completeResolve = resolve;
+    });
+
+    function markSaved(result) {
+      if (completed) return;
+      completed = true;
+      acceptManagedSaveResult(result, operation, uiMode);
+      closeSaveDelayChoice("saved");
+      completeResolve({ status: "saved", result, operation });
+    }
+
+    async function verifyOnce() {
+      try {
+        const snapshot = await AVT_BACKEND.state();
+        const saved = findSavedOperation(snapshot, operation);
+        if (saved) {
+          markSaved({ ok: true, data: snapshot, verified: true, saved });
+          return { checked: true, saved: true };
+        }
+        return { checked: true, saved: false };
+      } catch {
+        return { checked: false, saved: false };
+      }
+    }
+
+    async function startVerificationLoop() {
+      if (verificationRunning) return;
+      verificationRunning = true;
+      const deadline = Date.now() + 60000;
+
+      while (!completed && Date.now() < deadline) {
+        await wait(verificationMilliseconds());
+        if (completed) break;
+        await verifyOnce();
+      }
+
+      verificationRunning = false;
+    }
+
+    showSavingOverlay();
+
+    AVT_BACKEND.sendPrepared(operation)
+      .then(result => {
+        requestFinished = true;
+        markSaved(result);
+      })
+      .catch(() => {
+        requestFinished = true;
+        requestFailed = true;
+        startVerificationLoop();
+      });
+
+    while (!completed) {
+      const outcome = await Promise.race([
+        completion,
+        wait(savingWarningMilliseconds()).then(() => ({ status: "warning" }))
+      ]);
+
+      if (outcome.status === "saved") {
+        hideSavingOverlay();
+        return outcome;
+      }
+
+      const choice = await showSaveDelayChoice(requestFailed);
+
+      if (choice === "saved") {
+        const savedOutcome = await completion;
+        hideSavingOverlay();
+        return savedOutcome;
+      }
+
+      if (choice === "continue") {
+        // Der bereits gestartete Schreibvorgang bleibt unverändert aktiv.
+        // Es wird ausdrücklich kein zweiter Check-in gesendet.
+        continue;
+      }
+
+      if (choice === "offline") {
+        uiMode = "queued";
+        AVT_BACKEND.enqueuePrepared(operation);
+        startVerificationLoop();
+        hideSavingOverlay();
+        return { status: "queued", operation };
+      }
+
+      if (choice === "cancel") {
+        const verification = await verifyOnce();
+
+        if (completed || verification.saved) {
+          const savedOutcome = await completion;
+          hideSavingOverlay();
+          return savedOutcome;
+        }
+
+        if (requestFinished && verification.checked) {
+          uiMode = "cancelled";
+          startVerificationLoop();
+          hideSavingOverlay();
+          return { status: "cancelled", operation };
+        }
+
+        toast("Der Speicherstatus ist noch nicht eindeutig. Bitte weiter warten oder offline speichern.");
+      }
+    }
+
+    hideSavingOverlay();
+    return await completion;
+  }
+
+  function prepareOfflineOperation(action, checkin) {
+    const operation = AVT_BACKEND.prepareOperation(action, { checkin });
+    checkin.operationId = operation.operationId;
+    operation.payload.checkin.operationId = operation.operationId;
+    AVT_BACKEND.enqueuePrepared(operation);
+    return operation;
+  }
+
+  function isCheckinStillQueued(checkin) {
+    return Boolean(
+      checkin?.operationId &&
+      window.AVT_BACKEND?.isQueued?.(checkin.operationId)
+    );
+  }
+
+  function syncStateBannerHtml(checkin) {
+    if (!checkin?.offline || !checkin?.operationId) return "";
+
+    if (isCheckinStillQueued(checkin)) {
+      return '<div id="syncStateBanner" class="offline-indicator">Offline gespeichert – noch nicht synchronisiert</div>';
+    }
+
+    return '<div id="syncStateBanner" class="offline-synced-indicator">Die offline zwischengespeicherten Check-ins wurden erfolgreich synchronisiert.</div>';
+  }
+
+  function updateSuccessSyncBanner() {
+    if (!lastSuccessCheckin || $("resultPanel")?.classList.contains("hidden")) return;
+
+    const html = syncStateBannerHtml(lastSuccessCheckin);
+    const existing = $("syncStateBanner");
+
+    if (!html) {
+      existing?.remove();
+      return;
+    }
+
+    if (existing) {
+      existing.outerHTML = html;
+    } else {
+      $("resultContent")?.insertAdjacentHTML("afterbegin", html);
     }
   }
 
@@ -1038,16 +1310,24 @@
     };
 
     if (window.AVT_BACKEND?.isConfigured()) {
-      const result = await AVT_BACKEND.write("checkin", { checkin }, { allowQueue: true });
-      checkin.offline = Boolean(result.queued);
-      if (result.data) {
-        applySnapshot(result.data);
-        lastSyncAt = new Date();
-        showOnlineStatus();
-      }
-      if (result.queued) {
+      if (checkin.offline) {
+        prepareOfflineOperation("checkin", checkin);
         data.checkins[current.token] = checkin;
         S.save(data);
+      } else {
+        const result = await saveOperationWithProgress("checkin", { checkin });
+        checkin.operationId = result.operation.operationId;
+
+        if (result.status === "cancelled") {
+          return;
+        }
+
+        checkin.offline = result.status === "queued";
+
+        if (result.status === "queued") {
+          data.checkins[current.token] = checkin;
+          S.save(data);
+        }
       }
     } else {
       data.checkins[current.token] = checkin;
@@ -1078,39 +1358,55 @@
     if (!(await confirmBox("Unangemeldeten Check-in bestätigen", `${U.sumCounts(counts)} Personen mit ${U.euro(chosenPrice())} Eintritt erfassen?`, "Erfassen"))) return;
     if (!(await confirmOfflineCheckin())) return;
 
-    const id = `M-${String(data.sequence++).padStart(3, "0")}`;
+    const id = `M-${String(data.sequence).padStart(3, "0")}`;
     const checkin = {
       id,
+      number: id,
       name: "Unangemeldeter Check-in",
       counts: U.clone(counts),
       paid: chosenPrice(),
       basePrice: basePrice(),
       tariff: tariffMode,
       correctionReason,
-      offline: !navigator.onLine,
+      kind: "manual",
+      offline: !navigator.onLine || onlineState === "offline",
       time: U.now()
     };
+
     if (window.AVT_BACKEND?.isConfigured()) {
-      const result = await AVT_BACKEND.write("manualCheckin", { checkin }, { allowQueue: true });
-      checkin.offline = Boolean(result.queued);
-      if (result.data) {
-        applySnapshot(result.data);
-        lastSyncAt = new Date();
-        showOnlineStatus();
-      }
-      if (result.queued) {
+      if (checkin.offline) {
+        prepareOfflineOperation("manualCheckin", checkin);
+        data.sequence += 1;
         data.manual.push(checkin);
         S.save(data);
+      } else {
+        const result = await saveOperationWithProgress("manualCheckin", { checkin });
+        checkin.operationId = result.operation.operationId;
+
+        if (result.status === "cancelled") {
+          return;
+        }
+
+        checkin.offline = result.status === "queued";
+
+        if (result.status === "queued") {
+          data.sequence += 1;
+          data.manual.push(checkin);
+          S.save(data);
+        }
       }
     } else {
+      data.sequence += 1;
       data.manual.push(checkin);
       S.save(data);
     }
+
     restartPolling();
-    renderSuccess({ ...checkin, number: id, kind: "manual" });
+    renderSuccess(checkin);
   }
 
   function renderSuccess(checkin) {
+    lastSuccessCheckin = U.clone(checkin);
     panels.forEach(panel => $(panel).classList.add("hidden"));
     $("resultPanel").classList.remove("hidden");
 
@@ -1122,11 +1418,12 @@
       paid: checkin.paid,
       correctionReason: checkin.correctionReason || "",
       tariff: checkin.tariff || "regular",
-      offline: !!checkin.offline
+      offline: !!checkin.offline,
+      operationId: checkin.operationId || ""
     };
 
     $("resultContent").innerHTML = `
-      ${checkin.offline ? `<div class="offline-indicator">Offline gespeichert – noch nicht synchronisiert</div>` : ""}
+      ${syncStateBannerHtml(checkin)}
       <div class="card success success-compact">
         <div class="success-head">
           <h2>Check-in erfolgreich</h2>
@@ -1163,7 +1460,9 @@
       ? `<p><strong>Korrekturgrund:</strong> ${U.esc(reasonLabelFromId(detailPayload.correctionReason) || detailPayload.correctionReason)}</p>`
       : "";
     const offlineLine = detailPayload.offline
-      ? `<p><strong>Speicherung:</strong> Offline auf diesem Gerät gespeichert</p>`
+      ? isCheckinStillQueued(detailPayload)
+        ? `<p><strong>Speicherung:</strong> Offline zwischengespeichert, noch nicht synchronisiert</p>`
+        : `<p><strong>Speicherung:</strong> Offline zwischengespeichert und erfolgreich synchronisiert</p>`
       : "";
 
     $("modalTitle").textContent = "Details zum Check-in";

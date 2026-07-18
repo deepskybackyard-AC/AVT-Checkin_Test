@@ -10,14 +10,14 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/favicon-32.png">
-<link rel="stylesheet" href="styles.css?v=0.3.0-test.3">
+<link rel="stylesheet" href="styles.css?v=0.3.0-test.4">
 </head>
 <body>
 <div class="app-shell">
 <header class="topbar">
   <div class="brand">
     <img src="icons/header-logo.png" alt="Logo der Astronomischen Vereinigung Tübingen e. V.">
-    <div><strong>AVT Check-in <span class="pill">DEMO</span></strong><small>Version 0.3.0-test.3</small></div>
+    <div><strong>AVT Check-in <span class="pill">DEMO</span></strong><small>Version 0.3.0-test.4</small></div>
   </div>
   <div class="head-actions hidden" id="headActions"><button id="logoutTopBtn" class="head-btn" type="button" aria-label="Abmelden" title="Abmelden"><img src="icons/power-icon.png" alt=""></button><button id="refreshBtn" class="head-btn" type="button" aria-label="Statistik aktualisieren" title="Statistik aktualisieren"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M25 9a11 11 0 1 1-4-3.2"/><path d="M24 3v8h-8"/></svg></button></div>
 </header>
@@ -170,11 +170,45 @@
 </div>
 </div>
 
+<div id="savingOverlay" class="saving-overlay hidden" role="status" aria-live="assertive" aria-busy="true">
+  <div class="saving-card">
+    <svg class="saving-spinner" viewBox="0 0 64 64" aria-hidden="true">
+      <g class="saving-spinner-rotor">
+        <rect x="29" y="3" width="6" height="16" rx="3" transform="rotate(0 32 32)"></rect>
+        <rect x="29" y="3" width="6" height="16" rx="3" transform="rotate(30 32 32)" opacity=".92"></rect>
+        <rect x="29" y="3" width="6" height="16" rx="3" transform="rotate(60 32 32)" opacity=".84"></rect>
+        <rect x="29" y="3" width="6" height="16" rx="3" transform="rotate(90 32 32)" opacity=".76"></rect>
+        <rect x="29" y="3" width="6" height="16" rx="3" transform="rotate(120 32 32)" opacity=".68"></rect>
+        <rect x="29" y="3" width="6" height="16" rx="3" transform="rotate(150 32 32)" opacity=".60"></rect>
+        <rect x="29" y="3" width="6" height="16" rx="3" transform="rotate(180 32 32)" opacity=".52"></rect>
+        <rect x="29" y="3" width="6" height="16" rx="3" transform="rotate(210 32 32)" opacity=".44"></rect>
+        <rect x="29" y="3" width="6" height="16" rx="3" transform="rotate(240 32 32)" opacity=".36"></rect>
+        <rect x="29" y="3" width="6" height="16" rx="3" transform="rotate(270 32 32)" opacity=".30"></rect>
+        <rect x="29" y="3" width="6" height="16" rx="3" transform="rotate(300 32 32)" opacity=".24"></rect>
+        <rect x="29" y="3" width="6" height="16" rx="3" transform="rotate(330 32 32)" opacity=".18"></rect>
+      </g>
+    </svg>
+    <div class="saving-text">Check-in wird gespeichert …</div>
+  </div>
+</div>
+
+<div id="saveDelayModal" class="modal-backdrop save-delay-modal hidden" role="dialog" aria-modal="true" aria-labelledby="saveDelayTitle">
+  <div class="modal">
+    <h2 id="saveDelayTitle">Speicherung dauert länger als erwartet</h2>
+    <p id="saveDelayBody">Der Check-in wurde vom Server noch nicht bestätigt.</p>
+    <div class="save-delay-actions">
+      <button id="saveDelayCancel" class="secondary" type="button">Abbrechen</button>
+      <button id="saveDelayOffline" class="secondary" type="button">Offline speichern</button>
+      <button id="saveDelayContinue" class="primary" type="button">Weiter warten</button>
+    </div>
+  </div>
+</div>
+
 <script src="js/jsQR.js?v=1.4.0"></script>
-<script src="js/config.js?v=0.3.0-test.3"></script>
-<script src="js/backend.js?v=0.3.0-test.3"></script>
-<script src="js/storage.js?v=0.3.0-test.3"></script>
-<script src="js/scanner.js?v=0.3.0-test.3"></script>
-<script src="js/app.js?v=0.3.0-test.3"></script>
+<script src="js/config.js?v=0.3.0-test.4"></script>
+<script src="js/backend.js?v=0.3.0-test.4"></script>
+<script src="js/storage.js?v=0.3.0-test.4"></script>
+<script src="js/scanner.js?v=0.3.0-test.4"></script>
+<script src="js/app.js?v=0.3.0-test.4"></script>
 </body>
 </html>

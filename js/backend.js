@@ -3,7 +3,7 @@
 window.AVT_BACKEND = (function () {
   const C = window.AVT_CONFIG;
   const U = window.AVT_UTIL;
-  const API_TIMEOUT_MS = 14000;
+  const API_TIMEOUT_MS = Math.max(10000, Number(C.saveFlow?.requestTimeoutSeconds || 30) * 1000);
 
   function isConfigured() {
     return Boolean(C.backend?.enabled && C.backend?.url && !String(C.backend.url).includes("HIER_"));
@@ -118,8 +118,8 @@ window.AVT_BACKEND = (function () {
     return result.data;
   }
 
-  async function write(action, payload, { allowQueue = true } = {}) {
-    const operation = {
+  function prepareOperation(action, payload = {}) {
+    return {
       operationId: payload.operationId || newOperationId(),
       action,
       payload: {
@@ -128,6 +128,29 @@ window.AVT_BACKEND = (function () {
       },
       createdAt: U.now()
     };
+  }
+
+  async function sendPrepared(operation) {
+    const result = await request(operation.action, operation);
+    if (result.data) saveCached(result.data);
+    return { ...result, operation };
+  }
+
+  function enqueuePrepared(operation) {
+    enqueue(operation);
+    return operation;
+  }
+
+  function removeQueued(operationId) {
+    setQueue(getQueue().filter(item => item.operationId !== operationId));
+  }
+
+  function isQueued(operationId) {
+    return getQueue().some(item => item.operationId === operationId);
+  }
+
+  async function write(action, payload, { allowQueue = true } = {}) {
+    const operation = prepareOperation(action, payload);
 
     if (!navigator.onLine && allowQueue) {
       enqueue(operation);
@@ -135,9 +158,7 @@ window.AVT_BACKEND = (function () {
     }
 
     try {
-      const result = await request(action, operation);
-      if (result.data) saveCached(result.data);
-      return result;
+      return await sendPrepared(operation);
     } catch (error) {
       if (allowQueue) {
         enqueue(operation);
@@ -190,6 +211,11 @@ window.AVT_BACKEND = (function () {
     ping,
     bootstrap,
     state,
+    prepareOperation,
+    sendPrepared,
+    enqueuePrepared,
+    removeQueued,
+    isQueued,
     write,
     resetServer,
     loadCached,

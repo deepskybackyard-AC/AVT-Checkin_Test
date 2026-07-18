@@ -1,13 +1,13 @@
 # Changelog
 
-## 0.3.0-test.3
+## 0.3.0-test.4
 
-- Robuste automatische Synchronisierung alle 15 Sekunden.
-- Keine überlappenden Backendabrufe mehr.
-- Sofortige Synchronisierung bei `visibilitychange`, `pageshow`, `focus` und `online`.
-- Uhrzeit der letzten erfolgreichen Synchronisierung im Statusbalken.
-- Sichtbare Ansichten werden nach einem Fremd-Check-in aktualisiert.
-- Gleichzeitiger Check-in derselben geöffneten Anmeldung wird sichtbar erkannt.
-- Spenden auf das gemeinsame Backend umgestellt.
-- Spenden-Eingabefeld bleibt bei Hintergrundaktualisierung erhalten.
-- QR-Bildimport korrigiert.
+- Auffälliges Speicher-Overlay mit animiertem Inline-SVG-Spinner.
+- Komplette Oberfläche während des Speicherns gesperrt.
+- Konfigurierbare Warnzeit, Standard 8 Sekunden.
+- Dreifachauswahl bei langsamer Speicherung: weiter warten, offline speichern, abbrechen.
+- „Weiter warten“ beobachtet denselben Request; kein erneutes Senden.
+- Warnung wiederholt sich nach jeweils weiteren 8 Sekunden.
+- Sicherer Abbruch nur bei bestätigtem Fehlschlag.
+- Offline-Check-ins zeigen nach erfolgreicher Synchronisierung eine grüne Bestätigung.
+- Operationen erhalten eine stabile ID für idempotente Offline-Synchronisierung.

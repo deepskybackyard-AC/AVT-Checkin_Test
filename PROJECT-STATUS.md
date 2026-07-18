@@ -1,11 +1,11 @@
 # Projektstatus – AVT Check-in
 
-Aktuelle Frontendversion: 0.3.0-test.3
+Aktuelle Frontendversion: 0.3.0-test.4
 Kompatible Backendversion: 0.3.0-test.2
 
-Die automatische Mehrgeräte-Aktualisierung wurde stabilisiert. Das iPhone 12
-mini und das Samsung-Tablet sollen bei sichtbarer App spätestens nach dem
-eingestellten Intervall von 15 Sekunden denselben Stand anzeigen.
+Die Mehrgeräte-Synchronisierung funktioniert. Der aktuelle Testschwerpunkt ist
+nun die Bedienung bei langsamer oder unterbrochener Speicherung.
 
-Die Uhrzeit im grünen Statusbalken macht die laufende Synchronisierung direkt
-prüfbar.
+Die neue Version verhindert Doppelklicks, zeigt den laufenden Speichervorgang
+deutlich an und behandelt lange Antwortzeiten ohne erneutes Senden des
+Check-ins.
