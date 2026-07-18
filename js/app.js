@@ -45,7 +45,7 @@
 
     $("loginForm").addEventListener("submit", login);
     $("refreshBtn").addEventListener("click", refreshLocalData);
-    $("logoutBtn").addEventListener("click", () => { S.clearLogin(); showLogin(); });
+    $("logoutTopBtn").addEventListener("click", () => { S.clearLogin(); showLogin(); });
     $("resetBtn").addEventListener("click", reset);
     $("saveDonationBtn").addEventListener("click", saveDonation);
     $("searchInput").addEventListener("input", renderSearch);
@@ -82,13 +82,13 @@
   function showLogin() {
     $("loginView").classList.remove("hidden");
     $("mainView").classList.add("hidden");
-    $("refreshBtn").classList.add("hidden");
+    $("headActions").classList.add("hidden");
   }
 
   function showMain() {
     $("loginView").classList.add("hidden");
     $("mainView").classList.remove("hidden");
-    $("refreshBtn").classList.remove("hidden");
+    $("headActions").classList.remove("hidden");
     nav("home");
     updateHeaderStats();
   }
@@ -122,7 +122,9 @@
     }
     if (name === "scan") { resetCamera(); startCamera(); }
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (name !== "result") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   }
 
   function updateActiveNavigation() {
@@ -138,7 +140,7 @@
     renderAll();
     if (!$("searchPanel").classList.contains("hidden")) renderSearch();
     if (!$("donationPanel").classList.contains("hidden")) renderDonationPanel();
-    toast("Statistik aktualisiert.");
+    toast(navigator.onLine ? "Statistik aktualisiert." : "Offline: lokale Daten aktualisiert.");
   }
 
   function bookedConfirmed() {
@@ -650,6 +652,24 @@
     return true;
   }
 
+
+  async function confirmOfflineCheckin() {
+    if (navigator.onLine) return true;
+    return await confirmBox(
+      "Offline-Check-in",
+      "Check-in trotz fehlender Verbindung durchführen? Es muss sichergestellt sein, dass während des Offlinebetriebs nur mit diesem einen Device die Check-ins durchgeführt werden.",
+      "Offline einchecken"
+    );
+  }
+
+  function successScrollPosition() {
+    const actionRow = $("mainActionRow");
+    const topbar = document.querySelector(".topbar");
+    if (!actionRow) return 0;
+    const topbarHeight = topbar ? topbar.offsetHeight : 0;
+    return Math.max(0, window.scrollY + actionRow.getBoundingClientRect().top - topbarHeight - 4);
+  }
+
   async function completeExisting() {
     if (U.sumCounts(counts) < 1) {
       toast("Mindestens eine Person erforderlich.");
@@ -664,6 +684,7 @@
     }
 
     if (!(await confirmBox("Check-in bestätigen", message, "Einchecken"))) return;
+    if (!(await confirmOfflineCheckin())) return;
 
     data.checkins[current.token] = {
       token: current.token,
@@ -675,6 +696,7 @@
       tariff: tariffMode,
       correctionReason,
       kind: current.status === "confirmed" ? "regular" : current.status === "waitlist" ? "waitlist" : "exception",
+      offline: !navigator.onLine,
       time: U.now()
     };
     S.save(data);
@@ -701,6 +723,7 @@
     if (!validateCorrection()) return;
 
     if (!(await confirmBox("Spontanen Check-in bestätigen", `${U.sumCounts(counts)} Personen mit ${U.euro(chosenPrice())} Eintritt erfassen?`, "Erfassen"))) return;
+    if (!(await confirmOfflineCheckin())) return;
 
     const id = `M-${String(data.sequence++).padStart(3, "0")}`;
     const checkin = {
@@ -711,6 +734,7 @@
       basePrice: basePrice(),
       tariff: tariffMode,
       correctionReason,
+      offline: !navigator.onLine,
       time: U.now()
     };
     data.manual.push(checkin);
@@ -729,10 +753,12 @@
       counts: checkin.counts,
       paid: checkin.paid,
       correctionReason: checkin.correctionReason || "",
-      tariff: checkin.tariff || "regular"
+      tariff: checkin.tariff || "regular",
+      offline: !!checkin.offline
     };
 
     $("resultContent").innerHTML = `
+      ${checkin.offline ? `<div class="offline-indicator">Offline gespeichert – noch nicht synchronisiert</div>` : ""}
       <div class="card success success-compact">
         <div class="success-head">
           <h2>Check-in erfolgreich</h2>
@@ -750,7 +776,9 @@
 
     renderAll();
     updateHeaderStats();
-    window.scrollTo({ top: 0, behavior: "auto" });
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: successScrollPosition(), behavior: "auto" });
+    });
   }
 
   function showSuccessDetails(detailPayload) {
@@ -762,6 +790,9 @@
 
     const correctionLine = detailPayload.correctionReason
       ? `<p><strong>Korrekturgrund:</strong> ${U.esc(reasonLabelFromId(detailPayload.correctionReason) || detailPayload.correctionReason)}</p>`
+      : "";
+    const offlineLine = detailPayload.offline
+      ? `<p><strong>Speicherung:</strong> Offline auf diesem Gerät gespeichert</p>`
       : "";
 
     $("modalTitle").textContent = "Details zum Check-in";
@@ -781,6 +812,7 @@
         <p><strong>Tarif:</strong> ${U.esc(tariffLabel)}</p>
         <p><strong>Gezahlt:</strong> ${U.euro(detailPayload.paid)}</p>
         ${correctionLine}
+        ${offlineLine}
       </div>`;
     $("modalTitle").textContent = "Details zum Check-in";
     $("modalConfirm").textContent = "Schließen";

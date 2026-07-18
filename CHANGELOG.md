@@ -1,11 +1,10 @@
 # Changelog
 
-## 0.2.0-test.7
+## 0.2.0-test.8
 
-- AVT-Logo in der Kopfzeile eingebunden.
-- Preislabel auf „Zu zahlen“ verkürzt.
-- Erfolgsansicht kompakter gestaltet.
-- Button „Nächsten QR-Code scannen“ direkt unter dem grünen Erfolgsbereich.
-- Kein Button „Gesamtübersicht öffnen“ mehr.
-- Erfolgsdetails jetzt über Button „Details“.
-- Begriffe „Unangemeldet“, „Offen – regulär“, „Offen – Warteliste“.
+- Abmelden in die Kopfzeile verschoben und als Symbol-Button umgesetzt.
+- Aktualisierungsbutton in der Kopfzeile vergrößert.
+- AVT-Logo vergrößert und schwarzer Hintergrund transparent gemacht.
+- Erfolgsansicht scrollt jetzt direkt zur Zeile mit den fünf Hauptbuttons.
+- Offline-Check-in-Abfrage für den Ein-Gerät-Betrieb ergänzt.
+- Offline gespeicherte Check-ins gekennzeichnet.

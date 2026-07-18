@@ -176,3 +176,63 @@ button:disabled{opacity:.45}
   .success-compact .success-head h2{font-size:.96rem}
   .success-detail-button{font-size:.8rem;padding:6px 8px}
 }
+
+
+/* Ergänzungen 0.2.0-test.8 */
+.topbar{padding:10px max(14px,env(safe-area-inset-left)) 10px max(14px,env(safe-area-inset-left))}
+.brand{gap:12px;min-width:0}
+.brand img{
+  width:48px;
+  height:48px;
+  object-fit:contain;
+  display:block;
+}
+.brand strong,.brand small{line-height:1.15}
+.head-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.head-btn{
+  width:50px;
+  height:50px;
+  border-radius:14px;
+  font-size:1.5rem;
+  background:#445e72;
+  color:white;
+  border:1px solid #8193a2;
+  display:grid;
+  place-items:center;
+  padding:0;
+}
+.head-btn img{
+  width:25px;
+  height:25px;
+  object-fit:contain;
+  display:block;
+}
+.head-btn svg{
+  width:28px;
+  height:28px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2.5;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+@media(max-width:370px){
+  .brand img{width:42px;height:42px}
+  .head-btn{width:46px;height:46px}
+  .head-btn svg{width:26px;height:26px}
+  .head-btn img{width:23px;height:23px}
+}
+
+.offline-indicator{
+  margin:8px 0 10px;
+  background:#fff2cf;
+  border:1px solid #e0bd69;
+  color:#6d5400;
+  border-radius:12px;
+  padding:10px 12px;
+  font-weight:700;
+}

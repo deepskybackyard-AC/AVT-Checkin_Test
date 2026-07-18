@@ -10,16 +10,16 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/favicon-32.png">
-<link rel="stylesheet" href="styles.css?v=0.2.0-test.7">
+<link rel="stylesheet" href="styles.css?v=0.2.0-test.8">
 </head>
 <body>
 <div class="app-shell">
 <header class="topbar">
   <div class="brand">
-    <img src="icons/icon-192.png" alt="">
-    <div><strong>AVT Check-in <span class="pill">DEMO</span></strong><small>Version 0.2.0-test.7</small></div>
+    <img src="icons/header-logo.png" alt="Logo der Astronomischen Vereinigung Tübingen e. V.">
+    <div><strong>AVT Check-in <span class="pill">DEMO</span></strong><small>Version 0.2.0-test.8</small></div>
   </div>
-  <button id="refreshBtn" class="head-btn hidden" type="button" aria-label="Statistik aktualisieren" title="Statistik aktualisieren">⟳</button>
+  <div class="head-actions hidden" id="headActions"><button id="logoutTopBtn" class="head-btn" type="button" aria-label="Abmelden" title="Abmelden"><img src="icons/power-icon.png" alt=""></button><button id="refreshBtn" class="head-btn" type="button" aria-label="Statistik aktualisieren" title="Statistik aktualisieren"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M25 9a11 11 0 1 1-4-3.2"/><path d="M24 3v8h-8"/></svg></button></div>
 </header>
 
 <main>
@@ -50,7 +50,7 @@
     <div class="safe-capacity">Sicher freie Plätze: <strong id="safeFreeTop">0</strong></div>
   </section>
 
-  <nav class="action-row" aria-label="Hauptfunktionen">
+  <nav id="mainActionRow" class="action-row" aria-label="Hauptfunktionen">
     <button class="nav-icon" data-nav="scan" aria-label="QR-Code scannen" title="QR-Code scannen"><svg class="nav-svg qr-nav-svg" viewBox="0 0 32 32" aria-hidden="true">
   <rect x="2" y="2" width="9" height="9" rx="1"></rect><rect x="5" y="5" width="3" height="3" class="svg-fill"></rect>
   <rect x="21" y="2" width="9" height="9" rx="1"></rect><rect x="24" y="5" width="3" height="3" class="svg-fill"></rect>
@@ -131,8 +131,7 @@
     <div class="panel-head"><button data-nav="home">‹ Zurück</button><h2>Übersicht</h2></div>
     <div id="overviewContent"></div>
     <button id="resetBtn" class="secondary full">Testdaten zurücksetzen</button>
-    <button id="logoutBtn" class="secondary full">Abmelden</button>
-  </section>
+      </section>
 </section>
 </main>
 
@@ -150,9 +149,9 @@
 </div>
 
 <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="js/config.js?v=0.2.0-test.7"></script>
-<script src="js/storage.js?v=0.2.0-test.7"></script>
-<script src="js/scanner.js?v=0.2.0-test.7"></script>
-<script src="js/app.js?v=0.2.0-test.7"></script>
+<script src="js/config.js?v=0.2.0-test.8"></script>
+<script src="js/storage.js?v=0.2.0-test.8"></script>
+<script src="js/scanner.js?v=0.2.0-test.8"></script>
+<script src="js/app.js?v=0.2.0-test.8"></script>
 </body>
 </html>

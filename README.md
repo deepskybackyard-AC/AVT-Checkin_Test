@@ -1,19 +1,21 @@
-# AVT Check-in Demo 0.2.0-test.7
+# AVT Check-in Demo 0.2.0-test.8
 
-Lokale Ein-Gerät-Testversion unmittelbar vor dem Mehrgeräte-Test.
+Ein-Gerät-Testversion mit weiter optimierter Kopfzeile und vorbereitetem Offline-Einzelgerätmodus.
 
-## Neu und optimiert
+## Neu in dieser Version
 
-- Das AVT-Logo ersetzt jetzt das bisherige Platzhalter-Logo links oben.
-- Im Preisbereich steht jetzt kompakt **„Zu zahlen“** statt „Zu zahlender Eintritt“.
-- Nach einem erfolgreichen Check-in erscheint direkt unter dem grünen Bereich der Button **„Nächsten QR-Code scannen“**.
-- Der bisherige Button **„Gesamtübersicht öffnen“** entfällt vollständig.
-- Der grüne Erfolgsbereich ist stark verkleinert und zeigt nur noch **„Check-in erfolgreich“** sowie den Button **„Details“**.
-- Über **„Details“** werden Name, alle IDs, Personenzahlen je Kategorie und der gezahlte Betrag angezeigt.
-- Unterhalb des nächsten Scan-Buttons bleibt direkt die vollständige Rubrik **„Aktueller Gesamtstand“** sichtbar.
-- In der Gesamtübersicht wurde **„Spontan“** in **„Unangemeldet“** umbenannt.
-- **„Regulär (noch nicht eingecheckt)“** heißt jetzt **„Offen – regulär“**.
-- **„Warteliste (noch nicht eingecheckt)“** heißt jetzt **„Offen – Warteliste“**.
+- Abmelden jetzt oben in der Kopfzeile als Symbol-Button mit dem bereitgestellten Power-Symbol.
+- Aktualisieren oben in der Kopfzeile als eigener Button mit größerem Symbol.
+- Das AVT-Logo links oben ist deutlich größer.
+- Der schwarze Außenbereich des AVT-Logos wurde transparent gemacht, damit es sich besser in den dunklen Kopf einfügt.
+- Nach erfolgreichem Check-in wird zur Zeile mit den fünf Hauptbuttons positioniert; der Veranstaltungsblock ist dann erst nach Hochscrollen sichtbar.
+- Offline-Check-ins sind im Ein-Gerät-Betrieb möglich.
+- Vor jedem Offline-Check-in erscheint eine deutliche Sicherheitsabfrage.
+- Offline gespeicherte Check-ins werden im Erfolgsbereich sichtbar gekennzeichnet.
+
+## Wichtiger Offline-Hinweis
+
+Der Offline-Check-in ist nur dafür gedacht, dass **während des Offlinebetriebs ausschließlich dieses eine Gerät** benutzt wird.
 
 ## Testpasswort
 
