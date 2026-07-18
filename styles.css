@@ -98,3 +98,33 @@ button:disabled{opacity:.45}
   .ids-button{padding:4px 6px;font-size:.72rem}
   .result-actions{gap:4px}
 }
+
+
+/* Ergänzungen 0.2.0-test.6 */
+.price-action-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:10px;
+  align-items:stretch;
+  margin:12px 0;
+}
+.price-action-row .price-box{
+  margin:0;
+  min-width:0;
+}
+.price-action-row .checkin-side-button{
+  width:100%;
+  min-width:0;
+  min-height:100%;
+  margin:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  line-height:1.2;
+}
+@media(max-width:370px){
+  .price-action-row{gap:7px}
+  .price-action-row .price-box{padding:12px}
+  .price-action-row .price-total{font-size:1.5rem}
+  .price-action-row .checkin-side-button{padding:10px 7px;font-size:.94rem}
+}

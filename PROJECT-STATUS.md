@@ -1,18 +1,14 @@
 # Projektstatus – AVT Check-in
 
-Aktuelle Version: 0.2.0-test.5
+Aktuelle Version: 0.2.0-test.6
 
-Diese Version bildet die endgültig vorgesehenen lokalen Bedienabläufe ab:
+Diese Version schließt die lokale Ein-Gerät-Testphase voraussichtlich ab.
 
-- vollständiger Name nach Scan,
-- eine eigene ID je angemeldeter Person,
-- kompakte ID-Liste,
-- sichere freie Plätze,
-- Wartelistenreihenfolge mit bewusstem Ausnahme-Check-in,
-- Eintritt, Familientarif, Korrekturgründe und Spenden.
+## Nächster Schritt
 
-Nächster Schritt nach Bestätigung:
+Nach Bestätigung dieser Version:
 - gemeinsames Apps-Script-Test-Backend,
 - Test mit zwei oder mehr Geräten,
 - serverseitiger Schutz gegen Doppel-Check-ins,
-- gemeinsame Statistik und Einnahmen.
+- gemeinsame Statistik, Einnahmen und Spenden,
+- gemeinsame Wartelistenreihenfolge.

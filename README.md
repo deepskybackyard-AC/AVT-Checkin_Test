@@ -1,26 +1,28 @@
-# AVT Check-in Demo 0.2.0-test.5
+# AVT Check-in Demo 0.2.0-test.6
 
-Voraussichtlich letzte lokale Ein-Gerät-Testversion vor dem gemeinsamen Test mit zwei Geräten.
+Letzte geplante lokale Ein-Gerät-Testversion vor dem Test mit zwei Geräten.
 
 ## Neu und korrigiert
 
-- Bei „Vereinsmitglied“ wird 0,00 € nur eingesetzt, wenn noch kein korrigierter Betrag eingetragen wurde.
-- Ein bereits eingetragener Betrag bleibt bei Auswahl des Grundes erhalten.
-- Der Hilfetext unter Korrekturbetrag und Grund wurde aus Platzgründen entfernt.
-- Unter „x von y Personen eingecheckt“ werden wieder die sicher freien Plätze angezeigt.
-- Bei höheren Wartelistennummern erscheint eine deutliche Warnung über noch offene frühere Wartelistenanmeldungen.
-- Der Check-in bleibt nach zusätzlicher Bestätigung trotzdem möglich.
-- Nach einem QR-Scan wird der vollständige Name kompakt angezeigt.
-- Die einzelne sichtbare Anmelde-ID entfällt im Check-in-Kopf.
-- Ein kompakter Button „IDs (n)“ zeigt alle zur Anmeldung gehörenden Personen-IDs.
-- Die Demo bildet jetzt ausdrücklich eine eigene ID je angemeldeter Person ab.
-- Die Suche findet Anmeldungen auch über jede einzelne zugehörige ID.
-- Der dauerhafte Login verwendet jetzt einen versionsunabhängigen Speicherschlüssel und bleibt bei späteren Updates erhalten.
+- „Sicher freie Plätze“ wird unmittelbar nach Login und App-Start korrekt angezeigt.
+- Der dunkelblaue Bereich „Zu zahlender Eintritt“ nutzt ungefähr die halbe Breite.
+- Rechts daneben steht auf gleicher Höhe der Button „Check-in abschließen“.
+- Die Übersicht enthält zusätzlich:
+  - Regulär (noch nicht eingecheckt)
+  - Warteliste (noch nicht eingecheckt)
+- Die Demo enthält jetzt eine vollständige Wartelistenfolge W-001 bis W-007.
+- Die Wartelistenreihenfolge wird anhand jeder einzelnen Personen-ID geprüft.
+- Beim Check-in von W-006 wird gewarnt, solange niedrigere W-IDs offen sind.
+- Der Wartelisten-Check-in bleibt nach zusätzlicher Bestätigung trotzdem möglich.
+- Neue V8-Test-QR-Codes.
+
+## Empfohlener Wartelistentest
+
+1. W-001/W-002 einchecken.
+2. W-006/W-007 scannen.
+3. Die App muss weiterhin auf die offenen IDs W-003, W-004 und W-005 hinweisen.
+4. Der Check-in muss nach ausdrücklicher Bestätigung trotzdem möglich bleiben.
 
 ## Testpasswort
 
 `avt-demo`
-
-## Hinweis
-
-Die Check-in-Daten dieser Version werden wegen des neuen Mehrfach-ID-Datenmodells noch einmal in einem neuen lokalen Testspeicher geführt. Der dauerhaft gespeicherte Login ist davon unabhängig.

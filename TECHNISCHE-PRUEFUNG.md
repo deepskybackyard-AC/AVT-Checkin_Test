@@ -1,21 +1,19 @@
-# Technische Prüfung – AVT Check-in 0.2.0-test.5
+# Technische Prüfung – AVT Check-in 0.2.0-test.6
 
 Geprüft werden:
 
 - JavaScript-Syntax
-- eine ID je angemeldeter Person in allen Testanmeldungen
-- Anzahl der IDs entspricht der angemeldeten Personenzahl
-- Vereinsmitglied setzt nur bei leerem Feld automatisch 0,00 €
-- vorhandener Korrekturbetrag bleibt erhalten
-- sicher freie Plätze im Veranstaltungskopf
-- Wartelistenwarnung bei W-006
-- Ausnahme-Check-in bleibt möglich
-- kompakte Namensanzeige und Button „IDs (n)“
-- Suche über jede zugehörige ID
-- neue V7-Test-QR-Codes
+- 48 sichere freie Plätze unmittelbar beim Start der leeren Demo
+- vollständige Wartelisten-IDs W-001 bis W-007
+- nach Check-in von W-001/W-002 bleiben W-003 bis W-005 vor W-006 offen
+- Preisbereich und Abschlussbutton als zweispaltige Zeile
+- offene reguläre und offene Wartelistenpersonen in der Statistik
+- neue V8-Test-QR-Codes
 
 Ergebnis:
 
 - JavaScript-Syntax: fehlerfrei
-- ID-Anzahl je Anmeldung: korrekt
-- V7-QR-Code-Serie: vollständig
+- Initial sichere Plätze: 48
+- Wartelistenfolge: W-001 bis W-007 vollständig
+- IDs je Anmeldung: korrekt
+- V8-QR-Code-Serie: vollständig

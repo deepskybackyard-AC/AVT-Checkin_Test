@@ -1,13 +1,10 @@
 # Changelog
 
-## 0.2.0-test.5
+## 0.2.0-test.6
 
-- Vereinsmitglied überschreibt vorhandenen Korrekturbetrag nicht mehr.
-- Sicher freie Plätze wieder im Veranstaltungskopf.
-- Wartelistenwarnung mit weiterhin möglichem Ausnahme-Check-in.
-- Hilfetext unter der Eintrittskorrektur entfernt.
-- Vollständiger Name im kompakten Check-in-Kopf.
-- Mehrere Personen-IDs je Anmeldung mit Button „IDs (n)“.
-- Suche über alle zugehörigen IDs.
-- Versionsunabhängiger Login-Speicherschlüssel.
-- Neue V7-Test-QR-Codes.
+- Initialisierung der sicheren freien Plätze repariert.
+- Preisfeld und Abschlussbutton nebeneinander.
+- Offene reguläre und offene Wartelistenpersonen in der Gesamtübersicht.
+- Wartelistenprüfung auf Ebene einzelner W-IDs.
+- Vollständige Demo-Warteliste W-001 bis W-007.
+- Neue V8-Test-QR-Codes.

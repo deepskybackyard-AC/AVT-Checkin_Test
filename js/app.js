@@ -90,6 +90,7 @@
     $("mainView").classList.remove("hidden");
     $("refreshBtn").classList.remove("hidden");
     nav("home");
+    updateHeaderStats();
   }
 
   function nav(name, options = {}) {
@@ -178,8 +179,33 @@
         if (!data.checkins[registration.token]) expected += U.sumCounts(registration.booked);
       });
 
-    const safe = Math.max(0, C.event.maxPersons - present - expected);
-    return { regular, wait, exceptions, manual, present, confirmed, initially, expected, safe, entry, donations, total: entry + donations };
+    const regularOpen = expected;
+    const waitOpen = window.AVT_REGISTRATIONS
+      .filter(registration =>
+        registration.eventId === C.event.id &&
+        registration.status === "waitlist" &&
+        !data.checkins[registration.token]
+      )
+      .reduce((sum, registration) => sum + U.sumCounts(registration.booked), 0);
+
+    const safe = Math.max(0, C.event.maxPersons - present - regularOpen);
+
+    return {
+      regular,
+      wait,
+      exceptions,
+      manual,
+      present,
+      confirmed,
+      initially,
+      expected: regularOpen,
+      regularOpen,
+      waitOpen,
+      safe,
+      entry,
+      donations,
+      total: entry + donations
+    };
   }
 
   function updateHeaderStats() {
@@ -335,7 +361,7 @@
       return;
     }
 
-    const waitBlock = current.status === "waitlist" ? earlierWait() : [];
+    const waitBlock = current.status === "waitlist" ? earlierWaitIds() : [];
     const tone = current.status === "cancelled" ? "dangerbox" : current.status === "waitlist" ? "warning" : "";
     let warning = "";
 
@@ -343,7 +369,7 @@
       warning = '<div class="card dangerbox"><strong>Stornierte Anmeldung</strong><p>Ein Check-in ist nur als ausdrückliche Ausnahme möglich.</p></div>';
     }
     if (waitBlock.length) {
-      warning = `<div class="card warning"><strong>Diese Wartelistenanmeldung ist noch nicht an der Reihe.</strong><p>Vorher müssen grundsätzlich noch folgende Wartelisten-IDs berücksichtigt werden:</p><ul class="wait-warning-list">${waitBlock.map(item => `<li>${U.esc((item.ids || [item.number]).join(", "))}</li>`).join("")}</ul><p>Ein Check-in ist nach zusätzlicher Bestätigung trotzdem möglich.</p></div>`;
+      warning = `<div class="card warning"><strong>Diese Wartelistenanmeldung ist noch nicht an der Reihe.</strong><p>Vorher sind noch folgende Wartelisten-IDs offen:</p><ul class="wait-warning-list">${waitBlock.map(id => `<li>${U.esc(id)}</li>`).join("")}</ul><p>Ein Check-in ist nach zusätzlicher Bestätigung trotzdem möglich.</p></div>`;
     }
 
     $("resultContent").innerHTML = `
@@ -358,10 +384,13 @@
       </div>
       ${warning}
       ${counterHtml(false)}
-      ${priceHtml()}
-      <button id="completeBtn" class="primary full">
-        ${current.status === "cancelled" ? "Stornierte Anmeldung ausnahmsweise einchecken" : current.status === "waitlist" ? "Warteliste einchecken" : "Check-in abschließen"}
-      </button>`;
+      ${priceHtml(`<button id="completeBtn" class="primary checkin-side-button" type="button">${
+        current.status === "cancelled"
+          ? "Ausnahme einchecken"
+          : current.status === "waitlist"
+            ? "Warteliste einchecken"
+            : "Check-in abschließen"
+      }</button>`)}`;
 
     bindCounters(false);
     bindPrice();
@@ -388,13 +417,25 @@
     return "Storniert";
   }
 
-  function earlierWait() {
-    return window.AVT_REGISTRATIONS.filter(registration =>
-      registration.eventId === C.event.id &&
-      registration.status === "waitlist" &&
-      registration.waitNo < current.waitNo &&
-      !data.checkins[registration.token]
-    );
+  function waitIdNumber(id) {
+    const match = String(id || "").match(/^W-(\d+)$/i);
+    return match ? Number(match[1]) : Number.POSITIVE_INFINITY;
+  }
+
+  function earlierWaitIds() {
+    const currentIds = current?.ids || [current?.number].filter(Boolean);
+    const currentMinimum = Math.min(...currentIds.map(waitIdNumber));
+
+    return window.AVT_REGISTRATIONS
+      .filter(registration =>
+        registration.eventId === C.event.id &&
+        registration.status === "waitlist" &&
+        registration.token !== current?.token &&
+        !data.checkins[registration.token]
+      )
+      .flatMap(registration => registration.ids || [registration.number])
+      .filter(id => waitIdNumber(id) < currentMinimum)
+      .sort((left, right) => waitIdNumber(left) - waitIdNumber(right));
   }
 
   function counterHtml(isManual) {
@@ -495,15 +536,18 @@
     return tariffMode === "family" ? "Familientarif" : "Regulärer Tarif";
   }
 
-  function priceHtml() {
+  function priceHtml(actionButtonHtml = "") {
     const familyPossible = familyEligible();
+    const priceSummary = `<div class="price-box">
+      <div>Zu zahlender Eintritt</div>
+      <div class="price-total" data-price-total>${U.euro(chosenPrice())}</div>
+      <div data-price-hint>${U.esc(priceHintText())}</div>
+    </div>`;
 
     return `<div class="price-editor">
-      <div class="price-box">
-        <div>Zu zahlender Eintritt</div>
-        <div class="price-total" data-price-total>${U.euro(chosenPrice())}</div>
-        <div data-price-hint>${U.esc(priceHintText())}</div>
-      </div>
+      ${actionButtonHtml
+        ? `<div class="price-action-row">${priceSummary}${actionButtonHtml}</div>`
+        : priceSummary}
       <div class="card">
         <div class="tariff-row">
           <button data-tariff="regular" class="${tariffMode === "regular" ? "active-tariff" : ""}" type="button">Regulär ${U.euro(regularPrice())}</button>
@@ -519,7 +563,6 @@
             </select>
           </label>
         </div>
-
       </div>
     </div>`;
   }
@@ -616,7 +659,7 @@
 
     let message = `${current.number} mit ${U.sumCounts(counts)} Personen und ${U.euro(chosenPrice())} Eintritt einchecken?`;
     if (current.status === "cancelled") message = "Stornierte Anmeldung als Ausnahme: " + message;
-    if (current.status === "waitlist" && earlierWait().length) {
+    if (current.status === "waitlist" && earlierWaitIds().length) {
       message = `Frühere Wartelistenanmeldungen sind noch offen. Trotzdem fortfahren? ${message}`;
     }
 
@@ -719,6 +762,8 @@
         <dt>Sicher freie Plätze</dt><dd>${currentStats.safe}</dd>
         <dt>Eintritt</dt><dd>${U.euro(currentStats.entry)}</dd>
         <dt>Spenden</dt><dd>${U.euro(currentStats.donations)}</dd>
+        <dt>Regulär (noch nicht eingecheckt)</dt><dd>${currentStats.regularOpen}</dd>
+        <dt>Warteliste (noch nicht eingecheckt)</dt><dd>${currentStats.waitOpen}</dd>
       </dl>
     </div>`;
   }
