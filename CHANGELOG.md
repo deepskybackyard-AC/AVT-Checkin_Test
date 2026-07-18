@@ -1,6 +1,9 @@
 # Changelog
 
-## 0.2.0-test.12
+## 0.2.0-test.13
 
-- Info-Symbol im Veranstaltungsblock auf saubere SVG-Grafik umgestellt.
-- Symbol mittig im Button ausgerichtet.
+- Robusten, mehrfach verzögerten Scroll-Reset für iOS ergänzt.
+- Startansicht nach Login und Spende vollständig von oben positioniert.
+- Passwortbeschriftung auf „Passwort“ verkürzt.
+- Passwort ein-/ausblendbar.
+- Augen- und durchgestrichenes Augen-Symbol als echte Inline-SVGs integriert.

@@ -48,6 +48,7 @@
     });
 
     $("loginForm").addEventListener("submit", login);
+    $("passwordToggle").addEventListener("click", togglePasswordVisibility);
     $("eventInfoTopBtn").addEventListener("click", showEventDetails);
     $("refreshBtn").addEventListener("click", refreshLocalData);
     $("logoutTopBtn").addEventListener("click", () => { S.clearLogin(); showLogin(); });
@@ -72,6 +73,53 @@
     else showLogin();
   }
 
+  function togglePasswordVisibility() {
+    const input = $("password");
+    const toggle = $("passwordToggle");
+    const showPassword = input.type === "password";
+
+    input.type = showPassword ? "text" : "password";
+    toggle.setAttribute("aria-pressed", showPassword ? "true" : "false");
+    toggle.setAttribute("aria-label", showPassword ? "Passwort ausblenden" : "Passwort anzeigen");
+    toggle.setAttribute("title", showPassword ? "Passwort ausblenden" : "Passwort anzeigen");
+
+    toggle.querySelector(".password-eye-open").classList.toggle("hidden", showPassword);
+    toggle.querySelector(".password-eye-closed").classList.toggle("hidden", !showPassword);
+
+    input.focus({ preventScroll: true });
+    const valueLength = input.value.length;
+    try {
+      input.setSelectionRange(valueLength, valueLength);
+    } catch {}
+  }
+
+  function setScrollTopZero() {
+    const scrollingElement = document.scrollingElement || document.documentElement;
+    scrollingElement.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }
+
+  function forcePageTop() {
+    document.activeElement?.blur();
+    document.body.classList.add("force-top-reset");
+
+    setScrollTopZero();
+    requestAnimationFrame(() => {
+      setScrollTopZero();
+      requestAnimationFrame(setScrollTopZero);
+    });
+
+    [50, 150, 350, 700].forEach(delay => {
+      window.setTimeout(setScrollTopZero, delay);
+    });
+
+    window.setTimeout(() => {
+      document.body.classList.remove("force-top-reset");
+    }, 800);
+  }
+
   function login(event) {
     event.preventDefault();
     if ($("password").value !== C.password) {
@@ -80,22 +128,32 @@
     }
     S.setLogin(new FormData(event.currentTarget).get("mode") || "day");
     $("password").value = "";
+    $("password").type = "password";
+    $("passwordToggle").setAttribute("aria-pressed", "false");
+    $("passwordToggle").setAttribute("aria-label", "Passwort anzeigen");
+    $("passwordToggle").setAttribute("title", "Passwort anzeigen");
+    $("passwordToggle").querySelector(".password-eye-open").classList.remove("hidden");
+    $("passwordToggle").querySelector(".password-eye-closed").classList.add("hidden");
     $("loginError").textContent = "";
+    document.activeElement?.blur();
     showMain();
+    forcePageTop();
   }
 
   function showLogin() {
     $("loginView").classList.remove("hidden");
     $("mainView").classList.add("hidden");
     $("headActions").classList.add("hidden");
+    forcePageTop();
   }
 
   function showMain() {
     $("loginView").classList.add("hidden");
     $("mainView").classList.remove("hidden");
     $("headActions").classList.remove("hidden");
-    nav("home");
+    nav("home", { forceTop: true });
     updateHeaderStats();
+    forcePageTop();
   }
 
   function nav(name, options = {}) {
@@ -127,10 +185,8 @@
     }
     if (name === "scan") { resetCamera(); startCamera(); }
 
-    if (name === "home" || name === "donation") {
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: 0, behavior: "auto" });
-      });
+    if (name === "home" || name === "donation" || options.forceTop) {
+      forcePageTop();
     } else if (name !== "result") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -908,8 +964,9 @@
 
     data.donations.push({ amount, time: U.now() });
     S.save(data);
-    nav("home");
+    nav("home", { forceTop: true });
     updateHeaderStats();
+    forcePageTop();
     toast("Spende wurde erfasst.");
   }
 

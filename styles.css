@@ -310,3 +310,54 @@ button:disabled{opacity:.45}
 @media(max-width:370px){
   .event-info-svg{width:32px;height:32px}
 }
+
+
+/* Ergänzungen 0.2.0-test.13 */
+html{
+  scroll-behavior:auto;
+  overflow-anchor:none;
+}
+.password-label{
+  margin:10px 0 6px;
+}
+.password-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 48px;
+  gap:8px;
+  align-items:stretch;
+}
+.password-row input{
+  min-width:0;
+  margin:0;
+}
+.password-toggle{
+  width:48px;
+  min-width:48px;
+  height:48px;
+  padding:0;
+  display:grid;
+  place-items:center;
+  color:#233a4e;
+  background:#fff;
+}
+.password-eye{
+  width:31px;
+  height:25px;
+  display:block;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2.4;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.password-toggle[aria-pressed="true"]{
+  background:#edf2f6;
+}
+body.force-top-reset{
+  overflow-anchor:none;
+}
+@media(max-width:370px){
+  .password-row{grid-template-columns:minmax(0,1fr) 44px}
+  .password-toggle{width:44px;min-width:44px;height:46px}
+  .password-eye{width:29px;height:23px}
+}
