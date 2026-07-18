@@ -6,8 +6,8 @@ window.AVT_CONFIG = Object.freeze({
   backend: {
     // Nach der Apps-Script-Bereitstellung hier die Web-App-URL mit /exec eintragen.
     // Beispiel: https://script.google.com/macros/s/AKfycb.../exec
-    url: "HIER_APPS_SCRIPT_WEBAPP_URL_EINTRAGEN",
-    enabled: false,
+    url: "https://script.google.com/macros/s/AKfycbwNux4yfWhXbXp49XhLkXTI0zqA0F7RKs32uoLiUv4Tme5FB1ddrVMh8A02JmuGkCOQxQ/exec",
+    enabled: true,
     pollSeconds: 15
   },
   event: {
